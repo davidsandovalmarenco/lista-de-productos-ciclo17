@@ -1,109 +1,121 @@
 <div align="center">
-  <h1> Lista de Productos</h1>
-  <p><strong>Gestión de inventario de siguiente nivel con una experiencia de usuario (UX) asombrosa.</strong></p>
 
-  <p align="center">
-    <a href="https://reactnative.dev/"><img src="https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React Native" /></a>
-    <a href="https://expo.dev/"><img src="https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo" /></a>
-    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-  </p>
+# 📱 Lista de Productos Premium
+**Gestión de Inventario de Siguiente Nivel**
+
+[![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+<br/>
+
+Una aplicación móvil construida bajo los más altos estándares de diseño (SaaS UI/UX). Diseñada para transformar la gestión rutinaria de productos en una experiencia fluida, rápida y visualmente asombrosa.
 </div>
 
 ---
 
-<p align="center">
-  Una aplicación móvil construida con <b>React Native y Expo</b> diseñada bajo los más altos estándares visuales. Transforma la aburrida tarea de administrar productos en una experiencia premium. Interfaces fluidas, micro-interacciones pulidas y gestión de categorías por colores.
-</p>
+## 🎯 Visión General del Proyecto
 
-## Características Principales
+Esta aplicación de inventario está meticulosamente diseñada para ofrecer:
+- **Gestión Avanzada:** Control total sobre tu catálogo de productos y categorías.
+- **Rendimiento Nativo:** Animaciones de a 60FPS utilizando el motor de React Native.
+- **Experiencia de Usuario (UX):** Interacciones modernas basadas en gestos y retroalimentación inmediata.
 
-- **Diseño "Premium SaaS":** Interfaz de usuario minimalista, moderna y limpia, con fondos blancos, tipografía cuidada y sombras suaves.
-- **Gestión de Categorías Avanzada:** Crea, edita y elimina categorías. Asigna colores personalizados a cada categoría usando selecres cromáticos.
-- **Administración de Productos:** Flujo completo de CRUD (Crear, Leer, Actualizar, Eliminar). Controla el estado del inventario ("En Stock con interruptores fluidos.
-- **Bottom Sheets Animados:** Experiencia nativa al agregar o editar elementos, usando hojas modales que se deslizan desde la parte inferr de la pantalla con animaciones de resorte (*spring animations*).
-- **Validación en Tiempo Real:** Filtros inteligentes (como la restricción exclusiva a números en el precio) para prevenir errores de usuar y mantener la integridad de los datos.
-- **Micro-Interacciones:** Efectos al tocar, gestos de cierre y retroalimentación háptica/visual responsiva.
+> **💡 Nota Técnica:** La arquitectura enfatiza un estado escalable y un diseño de componentes altamente reutilizables y tipados estáticamente con TypeScript.
 
----
-
-## Capturas de Pantalla
-
-> **Tip:** *[Reemplaza estos enlaces con imágenes reales de tu aplicación]*
+<br/>
 
 <div align="center">
-  <img src="https://via.placeholder.com/250x500.png?text=Pantalla+Principal" width="22%" /> &nbsp;
-  <img src="https://via.placeholder.com/250x500.png?text=Crear+Producto" width="22%" /> &nbsp;
-  <img src="https://via.placeholder.com/250x500.png?text=Gestionar+Categorias" width="22%" /> &nbsp;
-  <img src="https://via.placeholder.com/250x500.png?text=Detalle+Premium" width="22%" />
+  <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=2000&auto=format&fit=crop" alt="App Banner" style="border-radius: 12px; width: 100%; max-height: 250px; object-fit: cover;" />
 </div>
 
----
-
-## Tecnologías Utilizadas
-
-- **[React Native](https://reactnative.dev/):** Framework principal para el desarrollo móvil.
-- **[Expo](https://expo.dev/):** Plataforma para desarrollo, construcción y despliegue rápido.
-- **[TypeScript](https://www.typescriptlang.org/):** Tipado estricto para un código más seguro, predecible y libre de errores.
-- **[Expo Vector Icons (Feather)](https://icons.expo.fyi/):** Íconos elegantes, ligeros y de estilo profesional.
-- **Animated API:** Utilizada de forma extensiva para modales, *bottom sheets* y transiciones fluidas.
+<br/>
 
 ---
 
-## Instalación y Uso Local
+## ⚡ Características Principales
 
-Sigue estos pasos para correr la aplicación en tu entorno local:
+| Característica | Descripción Técnica & UX |
+| :--- | :--- |
+| **Arquitectura SaaS Premium** | Interfaz limpia (fondos blancos, sombras sutiles) y jerarquía visual impecable, proporcionando confianza y profesionalismo al usuario final. |
+| **Categorización por Color** | Sistema de etiquetas dinámico. Los usuarios pueden asignar colores hexadecimales personalizados a las categorías (e.g. Rojo para "Urgente", Verde para "Orgánico"). |
+| **Filtros de Datos Estrictos** | Expresiones regulares (Regex) a nivel componente. Previene la introducción de caracteres no numéricos en los campos de precio e impone un formato monetario estricto. |
+| **Bottom Sheets Nativos** | Hojas modales contextuales (sin abandonar la pantalla) utilizando `Animated.spring()` para ofrecer interacciones elásticas realistas. |
+| **Flujo CRUD Completo** | Lógica de estado robusta capaz de crear, leer, actualizar y eliminar (CRUD) registros de forma instantánea y en memoria. |
+
+---
+
+## 📐 Tecnologías Utilizadas
+
+La solución está apoyada en una pila de desarrollo móvil moderna y probada en la industria:
+
+*   **[React Native](https://reactnative.dev/):** Renderizado de componentes nativos para iOS y Android desde un mismo código base.
+*   **[Expo](https://expo.dev/):** Abstracción de configuración nativa, compilación en la nube (EAS) y hot-reloading de última generación.
+*   **[TypeScript](https://www.typescriptlang.org/):** Superficie de código estáticamente tipada para evitar errores en tiempo de pre-compilación.
+*   **[Expo Vector Icons](https://icons.expo.fyi/):** Paquete de iconografía tipográfica (Feather) ligera y escalable de resolución independiente.
+
+---
+
+## 🚀 Instalación y Uso Local
+
+Para desplegar este entorno en tu máquina local, sigue el flujo estándar de Node.js:
 
 ### 1. Clonar el Repositorio
+Obtén el código fuente utilizando tu terminal preferida:
 ```bash
 git clone https://github.com/davidsandovalm/lista-de-productos-ciclo17.git
 cd lista-de-productos-ciclo17
 ```
 
 ### 2. Instalar Dependencias
-Asegúrate de tener [Node.js](https://nodejs.org/) instalado.
+Asegúrate de contar con Node.js (v16+) y ejecuta:
 ```bash
 npm install
-# o usando yarn
-yarn install
 ```
 
-### 3. Ejecutar la Aplicación
+### 3. Ejecutar el Servidor de Desarrollo Metro
+Inicia el empaquetador de la aplicación:
 ```bash
 npx expo start
 ```
-- Presiona `a` para abrir en un Emulador de **Android**.
-- Presiona `i` para abrir en el Simulador de **iOS** (Solo Mac).
-- Escanea el código QR con la app **Expo Go** en tu dispositivo físico (iOS/Android).
+
+**Para visualizarlo:**
+- Presiona `a` en tu terminal para correr un Emulador de **Android**.
+- Presiona `i` para correr un Simulador de **iOS** (Solo macOS).
+- Escanea el código QR mostrado en terminal con la aplicación **Expo Go** en tu dispositivo físico real.
 
 ---
 
-## Estructura del Proyecto Recomendada
+## 📂 Arquitectura de Directorios
 
-```text
+La estructura favorece un desarrollo ágil y escalabilidad entre vistas:
+
+```markdown
 📦 lista-de-productos-ciclo17
- ┣ 📂 assets/             # Imágenes y fuentes locales
- ┣ 📂 screen/             # Pantallas de la aplicación (Modales y Bottom Sheets)
- ┃ ┣ 📜 AddCategory.tsx   # Modal para la creación/selección de categorías
- ┃ ┗ 📜 AddProduct.tsx    # Modal para añadir y editar productos
- ┣ 📜 App.tsx             # Punto de entrada / Pantalla Principal (Lista de Productos)
- ┣ 📜 app.json            # Configuración de Expo
- ┗ 📜 package.json        # Dependencias y scripts
+ ┣ 📂 assets/             # Recursos estáticos (fuentes, iconos del app, splash screen)
+ ┣ 📂 screen/             # Controladores de Interfaz de Usuario
+ ┃ ┣ 📜 AddCategory.tsx   # Lógica, estado y vista del modal de gestión de categorías
+ ┃ ┗ 📜 AddProduct.tsx    # Formularios y validaciones para creación/edición de productos
+ ┣ 📜 App.tsx             # Entry-point. Bucle de estado central y renderizado de lista base.
+ ┣ 📜 app.json            # Manifiesto de Expo (Nombre, orientación, permisos, iconos)
+ ┗ 📜 package.json        # Árbol de dependencias y scripts de CLI
 ```
 
 ---
 
-## Contribución
+## 🤝 Contribuir a este Proyecto
 
-¡Las contribuciones son siempre bienvenidas! Si tienes ideas para mejorar la UI/UX, optimizar las animaciones o añadir nuevas funciones:
+Las Pull Requests son bienvenidas. Sigue estas convenciones para mantener el alto estándar del proyecto:
 
-1. Haz un **Fork** del proyecto.
-2. Crea una **Rama** para tu función (`git checkout -b feature/NuevaCaracteristica`).
-3. Haz **Commit** de tus cambios (`git commit -m 'Añadida NuevaCaracteristica'`).
-4. Haz **Push** a la rama (`git push origin feature/NuevaCaracteristica`).
-5. Abre un **Pull Request**.
+1. Realiza un **Fork** de este repositorio.
+2. Crea tu rama descriptiva: `git checkout -b refactoring/MejoraDeValidacion` o `feature/DashboardEstadisticas`.
+3. Haz un commit siguiendo [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+4. Sube los cambios y propón un **Pull Request**.
 
 ---
 
 <div align="center">
-  <p>Desarrollado con David Sandoval M y para el Ciclo 17 - Desarrollo de Aplicaciones Multidispositivo II</p>
+  <p><b>Desarrollado con pasión e ingeniería por David Sandoval M y para el Ciclo 17 - Desarrollo de Aplicaciones Multidispositivo II</b></p>
+  <p>Construyendo el futuro de las aplicaciones móviles un commit a la vez.</p>
 </div>
