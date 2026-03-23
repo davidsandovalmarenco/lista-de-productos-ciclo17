@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>✨ Lista de Productos - Premium SaaS 🚀</h1>
+  <h1> Lista de Productos</h1>
   <p><strong>Gestión de inventario de siguiente nivel con una experiencia de usuario (UX) asombrosa.</strong></p>
 
   <p align="center">
@@ -15,18 +15,18 @@
   Una aplicación móvil construida con <b>React Native y Expo</b> diseñada bajo los más altos estándares visuales. Transforma la aburrida tarea de administrar productos en una experiencia premium. Interfaces fluidas, micro-interacciones pulidas y gestión de categorías por colores.
 </p>
 
-## 🌟 Características Principales
+## Características Principales
 
-- **💅 Diseño "Premium SaaS":** Interfaz de usuario minimalista, moderna y limpia, con fondos blancos, tipografía cuidada y sombras suaves.
-- **🏷️ Gestión de Categorías Avanzada:** Crea, edita y elimina categorías. Asigna colores personalizados a cada categoría usando selectores cromáticos.
-- **📦 Administración de Productos:** Flujo completo de CRUD (Crear, Leer, Actualizar, Eliminar). Controla el estado del inventario ("En Stock") con interruptores fluidos.
-- **📱 Bottom Sheets Animados:** Experiencia nativa al agregar o editar elementos, usando hojas modales que se deslizan desde la parte inferior de la pantalla con animaciones de resorte (*spring animations*).
-- **🛡️ Validación en Tiempo Real:** Filtros inteligentes (como la restricción exclusiva a números en el precio) para prevenir errores de usuario y mantener la integridad de los datos.
-- **🖱️ Micro-Interacciones:** Efectos al tocar, gestos de cierre y retroalimentación háptica/visual responsiva.
+- **Diseño "Premium SaaS":** Interfaz de usuario minimalista, moderna y limpia, con fondos blancos, tipografía cuidada y sombras suaves.
+- **Gestión de Categorías Avanzada:** Crea, edita y elimina categorías. Asigna colores personalizados a cada categoría usando selecres cromáticos.
+- **Administración de Productos:** Flujo completo de CRUD (Crear, Leer, Actualizar, Eliminar). Controla el estado del inventario ("En Stock con interruptores fluidos.
+- **Bottom Sheets Animados:** Experiencia nativa al agregar o editar elementos, usando hojas modales que se deslizan desde la parte inferr de la pantalla con animaciones de resorte (*spring animations*).
+- **Validación en Tiempo Real:** Filtros inteligentes (como la restricción exclusiva a números en el precio) para prevenir errores de usuar y mantener la integridad de los datos.
+- **Micro-Interacciones:** Efectos al tocar, gestos de cierre y retroalimentación háptica/visual responsiva.
 
 ---
 
-## 📸 Capturas de Pantalla
+## Capturas de Pantalla
 
 > **Tip:** *[Reemplaza estos enlaces con imágenes reales de tu aplicación]*
 
@@ -39,7 +39,7 @@
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## Tecnologías Utilizadas
 
 - **[React Native](https://reactnative.dev/):** Framework principal para el desarrollo móvil.
 - **[Expo](https://expo.dev/):** Plataforma para desarrollo, construcción y despliegue rápido.
@@ -49,7 +49,7 @@
 
 ---
 
-## 🚀 Instalación y Uso Local
+## Instalación y Uso Local
 
 Sigue estos pasos para correr la aplicación en tu entorno local:
 
@@ -77,7 +77,7 @@ npx expo start
 
 ---
 
-## 📂 Estructura del Proyecto Recomendada
+## Estructura del Proyecto Recomendada
 
 ```text
 📦 lista-de-productos-ciclo17
@@ -92,7 +92,7 @@ npx expo start
 
 ---
 
-## 🤝 Contribución
+## Contribución
 
 ¡Las contribuciones son siempre bienvenidas! Si tienes ideas para mejorar la UI/UX, optimizar las animaciones o añadir nuevas funciones:
 
@@ -105,5 +105,5 @@ npx expo start
 ---
 
 <div align="center">
-  <p>Desarrollado con ☕ y ❤️ para el Ciclo 17 - Desarrollo de Aplicaciones Multidispositivo II</p>
+  <p>Desarrollado con David Sandoval M y para el Ciclo 17 - Desarrollo de Aplicaciones Multidispositivo II</p>
 </div>
