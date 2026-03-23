@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Product, Category } from "../App";
+import AddCategoryScreen from "./AddCategory";
 
 interface AddProductScreenProps {
   visible: boolean;
@@ -11,8 +12,6 @@ interface AddProductScreenProps {
   categories: Category[];
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
 }
-
-const COLORS = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899", "#6B7280"];
 
 export default function AddProductScreen({
   visible,
@@ -27,9 +26,7 @@ export default function AddProductScreen({
   const [categoryId, setCategoryId] = useState("");
   const [inStock, setInStock] = useState(true);
   
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [newCatName, setNewCatName] = useState("");
-  const [newCatColor, setNewCatColor] = useState(COLORS[0]);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -46,7 +43,6 @@ export default function AddProductScreen({
         setCategoryId(categories[0]?.id || "");
         setInStock(true);
       }
-      setIsCreatingCategory(false);
       
       Animated.spring(slideAnim, {
         toValue: 1,
@@ -84,15 +80,6 @@ export default function AddProductScreen({
     handleClose();
   };
 
-  const handleCreateCategory = () => {
-    if (!newCatName.trim()) return;
-    const newCat = { id: `uc_${Date.now()}`, name: newCatName.trim(), color: newCatColor };
-    setCategories(prev => [...prev, newCat]);
-    setCategoryId(newCat.id);
-    setIsCreatingCategory(false);
-    setNewCatName("");
-  };
-
   const handleDeleteCategory = (catId: string) => {
     setCategories(prev => prev.filter(c => c.id !== catId));
     if (categoryId === catId) {
@@ -103,73 +90,49 @@ export default function AddProductScreen({
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
-        
-        <Animated.View style={[styles.bottomSheet, {
-          transform: [{
-            translateY: slideAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [800, 0]
-            })
-          }]
-        }]}>
-          <View style={styles.dragHandleWrapper}>
-             <View style={styles.dragHandle} />
-          </View>
+    <>
+      <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
           
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
-            <View style={styles.header}>
-              <Text style={styles.title}>{productToEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
-              <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
-                <Feather name="x" size={24} color="#9CA3AF" />
-              </TouchableOpacity>
+          <Animated.View style={[styles.bottomSheet, {
+            transform: [{
+              translateY: slideAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [800, 0]
+              })
+            }]
+          }]}>
+            <View style={styles.dragHandleWrapper}>
+               <View style={styles.dragHandle} />
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Nombre del producto</Text>
-              <TextInput style={styles.input} placeholder="Ej: Teclado Mecánico" value={name} onChangeText={setName} placeholderTextColor="#9CA3AF" />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Precio ($)</Text>
-              <TextInput style={styles.input} placeholder="0.00" keyboardType="numeric" value={price} onChangeText={setPrice} placeholderTextColor="#9CA3AF" />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Categoría</Text>
-                {!isCreatingCategory && (
-                  <TouchableOpacity onPress={() => setIsCreatingCategory(true)}>
-                    <Text style={styles.linkText}>+ Nueva categoría</Text>
-                  </TouchableOpacity>
-                )}
+            
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
+              <View style={styles.header}>
+                <Text style={styles.title}>{productToEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
+                <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+                  <Feather name="x" size={24} color="#9CA3AF" />
+                </TouchableOpacity>
               </View>
 
-              {isCreatingCategory ? (
-                <View style={styles.newCategoryBox}>
-                   <TextInput style={styles.inputSmall} placeholder="Nombre de categoría" value={newCatName} onChangeText={setNewCatName} autoFocus placeholderTextColor="#9CA3AF" />
-                   
-                   <Text style={styles.subtext}>Color de etiqueta</Text>
-                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorScroll} contentContainerStyle={{gap: 12}}>
-                     {COLORS.map(c => (
-                       <TouchableOpacity key={c} onPress={() => setNewCatColor(c)} style={[styles.colorCircle, { backgroundColor: c }, newCatColor === c && styles.colorCircleActive]}>
-                         {newCatColor === c && <Feather name="check" size={16} color="#FFF" />}
-                       </TouchableOpacity>
-                     ))}
-                   </ScrollView>
-                   
-                   <View style={styles.catActionRow}>
-                     <TouchableOpacity onPress={() => setIsCreatingCategory(false)} style={styles.catBtnCancel}>
-                       <Text style={styles.catBtnCancelText}>Cancelar</Text>
-                     </TouchableOpacity>
-                     <TouchableOpacity onPress={handleCreateCategory} style={[styles.catBtnSave, !newCatName.trim() && {opacity: 0.5}]} disabled={!newCatName.trim()}>
-                       <Text style={styles.catBtnSaveText}>Crear</Text>
-                     </TouchableOpacity>
-                   </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Nombre del producto</Text>
+                <TextInput style={styles.input} placeholder="Ej: Teclado Mecánico" value={name} onChangeText={setName} placeholderTextColor="#9CA3AF" />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Precio ($)</Text>
+                <TextInput style={styles.input} placeholder="0.00" keyboardType="numeric" value={price} onChangeText={setPrice} placeholderTextColor="#9CA3AF" />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>Categoría</Text>
+                  <TouchableOpacity onPress={() => setShowCategoryModal(true)}>
+                    <Text style={styles.linkText}>+ Gestionar / Nueva</Text>
+                  </TouchableOpacity>
                 </View>
-              ) : (
+
                 <View style={styles.categoryChips}>
                   {categories.map((cat) => (
                     <TouchableOpacity key={cat.id} onPress={() => setCategoryId(cat.id)} style={[styles.chip, categoryId === cat.id && styles.chipActive, { borderColor: categoryId === cat.id ? cat.color : '#E5E7EB' }]}>
@@ -188,33 +151,44 @@ export default function AddProductScreen({
                     </TouchableOpacity>
                   ))}
                 </View>
-              )}
-            </View>
-
-            <View style={styles.statusGroup}>
-              <View style={{flex: 1}}>
-                <Text style={styles.label}>Estado del producto</Text>
-                <Text style={styles.statusSubtext}>¿Está disponible para la venta?</Text>
               </View>
-              <TouchableOpacity style={[styles.toggleWrap, inStock && styles.toggleWrapActive]} onPress={() => setInStock(!inStock)} activeOpacity={0.8}>
-                 <Animated.View style={[styles.toggleKnob, inStock && styles.toggleKnobActive]} />
-              </TouchableOpacity>
-            </View>
 
-            <View style={styles.footer}>
-              <TouchableOpacity 
-                style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId) && styles.saveActionBtnDisabled]} 
-                onPress={handleSave} 
-                activeOpacity={0.8}
-                disabled={!name.trim() || !price.trim() || !categoryId}
-              >
-                <Text style={styles.saveActionText}>{productToEdit ? "Guardar cambios" : "Crear producto"}</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </Modal>
+              <View style={styles.statusGroup}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.label}>Estado del producto</Text>
+                  <Text style={styles.statusSubtext}>¿Está disponible para la venta?</Text>
+                </View>
+                <TouchableOpacity style={[styles.toggleWrap, inStock && styles.toggleWrapActive]} onPress={() => setInStock(!inStock)} activeOpacity={0.8}>
+                   <Animated.View style={[styles.toggleKnob, inStock && styles.toggleKnobActive]} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.footer}>
+                <TouchableOpacity 
+                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId) && styles.saveActionBtnDisabled]} 
+                  onPress={handleSave} 
+                  activeOpacity={0.8}
+                  disabled={!name.trim() || !price.trim() || !categoryId}
+                >
+                  <Text style={styles.saveActionText}>{productToEdit ? "Guardar cambios" : "Crear producto"}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      <AddCategoryScreen 
+        visible={showCategoryModal} 
+        onClose={() => setShowCategoryModal(false)}
+        categories={categories}
+        setCategories={setCategories}
+        onCategoryCreated={(id) => {
+          setCategoryId(id);
+          setShowCategoryModal(false);
+        }}
+      />
+    </>
   );
 }
 
@@ -299,18 +273,6 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontWeight: '500',
   },
-  inputSmall: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#111827',
-    fontWeight: '500',
-    marginBottom: 16,
-  },
   categoryChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -329,7 +291,6 @@ const styles = StyleSheet.create({
   chipActive: {
     borderWidth: 1.5,
   },
-  chipSelectedBg: {},
   categoryDot: {
     width: 10,
     height: 10,
@@ -340,67 +301,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#4B5563',
-  },
-  chipTextActive: {
-    fontWeight: '700',
-  },
-  newCategoryBox: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  subtext: {
-    fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  colorScroll: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  colorCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorCircleActive: {
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  catActionRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  catBtnCancel: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-  },
-  catBtnCancelText: {
-    color: '#6B7280',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  catBtnSave: {
-    backgroundColor: '#111827',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-  },
-  catBtnSaveText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 15,
   },
   statusGroup: {
     flexDirection: 'row',
