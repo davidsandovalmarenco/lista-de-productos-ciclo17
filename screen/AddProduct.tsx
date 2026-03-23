@@ -25,7 +25,7 @@ export default function AddProductScreen({
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [inStock, setInStock] = useState(true);
-  
+
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -43,7 +43,7 @@ export default function AddProductScreen({
         setCategoryId(categories[0]?.id || "");
         setInStock(true);
       }
-      
+
       Animated.spring(slideAnim, {
         toValue: 1,
         useNativeDriver: true,
@@ -65,7 +65,7 @@ export default function AddProductScreen({
 
   const handleSave = () => {
     if (!name.trim() || !price.trim() || !categoryId) return;
-    
+
     if (productToEdit) {
       setProducts((prev) => prev.map(p => p.id === productToEdit.id ? { ...p, name, price: parseFloat(price), categoryId, inStock } : p));
     } else {
@@ -94,7 +94,7 @@ export default function AddProductScreen({
       <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
         <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
-          
+
           <Animated.View style={[styles.bottomSheet, {
             transform: [{
               translateY: slideAnim.interpolate({
@@ -104,9 +104,9 @@ export default function AddProductScreen({
             }]
           }]}>
             <View style={styles.dragHandleWrapper}>
-               <View style={styles.dragHandle} />
+              <View style={styles.dragHandle} />
             </View>
-            
+
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
               <View style={styles.header}>
                 <Text style={styles.title}>{productToEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
@@ -117,12 +117,18 @@ export default function AddProductScreen({
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Nombre del producto</Text>
-                <TextInput style={styles.input} placeholder="Ej: Teclado Mecánico" value={name} onChangeText={setName} placeholderTextColor="#9CA3AF" />
+                <TextInput style={styles.input} value={name} onChangeText={setName} placeholderTextColor="#9CA3AF" />
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Precio ($)</Text>
-                <TextInput style={styles.input} placeholder="0.00" keyboardType="numeric" value={price} onChangeText={setPrice} placeholderTextColor="#9CA3AF" />
+                <TextInput 
+                  style={styles.input} 
+                  keyboardType="numeric" 
+                  value={price} 
+                  onChangeText={(text) => setPrice(text.replace(/[^0-9.]/g, ''))} 
+                  placeholderTextColor="#9CA3AF" 
+                />
               </View>
 
               <View style={styles.inputGroup}>
@@ -136,14 +142,14 @@ export default function AddProductScreen({
                 <View style={styles.categoryChips}>
                   {categories.map((cat) => (
                     <TouchableOpacity key={cat.id} onPress={() => setCategoryId(cat.id)} style={[styles.chip, categoryId === cat.id && styles.chipActive, { borderColor: categoryId === cat.id ? cat.color : '#E5E7EB' }]}>
-                      {categoryId === cat.id && <View style={[StyleSheet.absoluteFill, {backgroundColor: cat.color, opacity: 0.1, borderRadius: 20}]} />}
+                      {categoryId === cat.id && <View style={[StyleSheet.absoluteFill, { backgroundColor: cat.color, opacity: 0.1, borderRadius: 20 }]} />}
                       <View style={[styles.categoryDot, { backgroundColor: cat.color }]} />
-                      <Text style={[styles.chipText, categoryId === cat.id && {color: cat.color}]}>{cat.name}</Text>
+                      <Text style={[styles.chipText, categoryId === cat.id && { color: cat.color }]}>{cat.name}</Text>
                       {categoryId === cat.id && (
-                        <TouchableOpacity 
-                          onPress={() => handleDeleteCategory(cat.id)} 
-                          style={{marginLeft: 8, padding: 4, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12}}
-                          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                        <TouchableOpacity
+                          onPress={() => handleDeleteCategory(cat.id)}
+                          style={{ marginLeft: 8, padding: 4, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
                           <Feather name="trash-2" size={14} color="#DC2626" />
                         </TouchableOpacity>
@@ -154,19 +160,19 @@ export default function AddProductScreen({
               </View>
 
               <View style={styles.statusGroup}>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Estado del producto</Text>
                   <Text style={styles.statusSubtext}>¿Está disponible para la venta?</Text>
                 </View>
                 <TouchableOpacity style={[styles.toggleWrap, inStock && styles.toggleWrapActive]} onPress={() => setInStock(!inStock)} activeOpacity={0.8}>
-                   <Animated.View style={[styles.toggleKnob, inStock && styles.toggleKnobActive]} />
+                  <Animated.View style={[styles.toggleKnob, inStock && styles.toggleKnobActive]} />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.footer}>
-                <TouchableOpacity 
-                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId) && styles.saveActionBtnDisabled]} 
-                  onPress={handleSave} 
+                <TouchableOpacity
+                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId) && styles.saveActionBtnDisabled]}
+                  onPress={handleSave}
                   activeOpacity={0.8}
                   disabled={!name.trim() || !price.trim() || !categoryId}
                 >
@@ -178,8 +184,8 @@ export default function AddProductScreen({
         </KeyboardAvoidingView>
       </Modal>
 
-      <AddCategoryScreen 
-        visible={showCategoryModal} 
+      <AddCategoryScreen
+        visible={showCategoryModal}
         onClose={() => setShowCategoryModal(false)}
         categories={categories}
         setCategories={setCategories}

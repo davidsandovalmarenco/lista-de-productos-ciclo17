@@ -12,8 +12,8 @@ interface AddCategoryScreenProps {
 }
 
 const COLORS = [
-  "#EF4444", "#F97316", "#F59E0B", "#10B981", 
-  "#06B6D4", "#3B82F6", "#6366F1", "#8B5CF6", 
+  "#EF4444", "#F97316", "#F59E0B", "#10B981",
+  "#06B6D4", "#3B82F6", "#6366F1", "#8B5CF6",
   "#D946EF", "#EC4899", "#F43F5E", "#6B7280"
 ];
 
@@ -26,7 +26,7 @@ export default function AddCategoryScreen({
 }: AddCategoryScreenProps) {
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
-  
+
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function AddCategoryScreen({
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : (Platform.OS === "android" ? "height" : undefined)}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
-        
+
         <Animated.View style={[styles.bottomSheet, {
           transform: [{
             translateY: slideAnim.interpolate({
@@ -76,9 +76,9 @@ export default function AddCategoryScreen({
           }]
         }]}>
           <View style={styles.dragHandleWrapper}>
-             <View style={styles.dragHandle} />
+            <View style={styles.dragHandle} />
           </View>
-          
+
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
             <View style={styles.header}>
               <Text style={styles.title}>Nueva categoría</Text>
@@ -88,22 +88,21 @@ export default function AddCategoryScreen({
             </View>
 
             <View style={styles.previewContainer}>
-               <Text style={styles.previewLabel}>Vista previa</Text>
-               <View style={styles.previewBadge}>
-                 <View style={[StyleSheet.absoluteFill, {backgroundColor: selectedColor, opacity: 0.1, borderRadius: 20}]} />
-                 <View style={[styles.categoryDot, { backgroundColor: selectedColor }]} />
-                 <Text style={[styles.previewText, {color: selectedColor}]}>{name.trim() || "Nombre de categoría"}</Text>
-               </View>
+              <Text style={styles.previewLabel}>Vista previa</Text>
+              <View style={styles.previewBadge}>
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: selectedColor, opacity: 0.1, borderRadius: 20 }]} />
+                <View style={[styles.categoryDot, { backgroundColor: selectedColor }]} />
+                <Text style={[styles.previewText, { color: selectedColor }]}>{name.trim() || "Nombre de categoría"}</Text>
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Nombre</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Ej: Accesorios" 
-                value={name} 
-                onChangeText={setName} 
-                placeholderTextColor="#9CA3AF" 
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholderTextColor="#9CA3AF"
                 autoFocus
               />
             </View>
@@ -112,9 +111,9 @@ export default function AddCategoryScreen({
               <Text style={styles.label}>Color representativo</Text>
               <View style={styles.colorGrid}>
                 {COLORS.map(c => (
-                  <TouchableOpacity 
-                    key={c} 
-                    onPress={() => setSelectedColor(c)} 
+                  <TouchableOpacity
+                    key={c}
+                    onPress={() => setSelectedColor(c)}
                     style={[styles.colorCircle, { backgroundColor: c }, selectedColor === c && styles.colorCircleActive]}
                   >
                     {selectedColor === c && <Feather name="check" size={18} color="#FFF" />}
@@ -124,9 +123,9 @@ export default function AddCategoryScreen({
             </View>
 
             <View style={styles.footer}>
-              <TouchableOpacity 
-                style={[styles.saveActionBtn, !name.trim() && styles.saveActionBtnDisabled]} 
-                onPress={handleSave} 
+              <TouchableOpacity
+                style={[styles.saveActionBtn, !name.trim() && styles.saveActionBtnDisabled]}
+                onPress={handleSave}
                 activeOpacity={0.8}
                 disabled={!name.trim()}
               >
@@ -260,7 +259,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
