@@ -8,61 +8,133 @@ import {
   TextInput,
   ScrollView,
   Modal,
-  Pressable,
   Platform,
+  Animated,
+  LayoutAnimation,
+  Pressable,
 } from "react-native";
 import { Feather } from '@expo/vector-icons';
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import AddProductScreen from "./screen/AddProduct";
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+}
 
 export interface Product {
   id: string;
   name: string;
   price: number;
-  category: string;
+  categoryId: string;
   inStock: boolean;
 }
 
-export const initialProducts: Product[] = [
-  {
-    id: "1",
-    name: "Laptop",
-    price: 1200,
-    category: "Electronics",
-    inStock: true,
-  },
-  {
-    id: "2",
-    name: "Mouse",
-    price: 25,
-    category: "Electronics",
-    inStock: true,
-  },
-  {
-    id: "3",
-    name: "Desk",
-    price: 300,
-    category: "Furniture",
-    inStock: false,
-  },
+export const initialCategories: Category[] = [
+  { id: "c1", name: "Electronics", color: "#3B82F6" },
+  { id: "c2", name: "Furniture", color: "#8B5CF6" },
+  { id: "c3", name: "Clothing", color: "#EC4899" },
 ];
 
-type FilterType = 'All' | 'Disponible' | 'Agotado';
+export const initialProducts: Product[] = [
+  { id: "1", name: "Laptop Pro", price: 1299.99, categoryId: "c1", inStock: true },
+  { id: "2", name: "Wireless Mouse", price: 45.0, categoryId: "c1", inStock: true },
+  { id: "3", name: "Ergonomic Desk", price: 350.0, categoryId: "c2", inStock: false },
+];
+
+// Debounce hook
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+const SwipeableCard = ({
+  item,
+  category,
+  onEdit,
+  onDelete
+}: {
+  item: Product;
+  category: Category;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
+  const charSum = item.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const hue = (charSum * 137.5) % 360;
+  const thumbColor = `hsl(${hue}, 70%, 90%)`;
+  const thumbTextColor = `hsl(${hue}, 60%, 40%)`;
+
+  return (
+    <View style={styles.swipeWrap}>
+      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}>
+        <View style={styles.cardLeft}>
+          <View style={[styles.thumbnail, { backgroundColor: thumbColor }]}>
+            <Text style={[styles.thumbnailText, { color: thumbTextColor }]}>
+              {item.name.substring(0, 2).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.categoryBadgeRow}>
+              <View style={[styles.categoryDot, { backgroundColor: category?.color || '#9CA3AF' }]} />
+              <Text style={styles.categoryNameText}>{category?.name || 'General'}</Text>
+            </View>
+            <Text style={styles.price}>${item.price.toFixed(2)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.cardRight}>
+          <View style={[styles.badge, item.inStock ? styles.badgeSuccess : styles.badgeDanger]}>
+            <Text style={[styles.badgeText, item.inStock ? styles.badgeTextSuccess : styles.badgeTextDanger]}>
+              {item.inStock ? "Disponible" : "Agotado"}
+            </Text>
+          </View>
+          <View style={{flexDirection: 'row', gap: 10, marginTop: 12}}>
+            <TouchableOpacity onPress={onEdit} style={{padding: 8, backgroundColor: '#F3F4F6', borderRadius: 8}}>
+              <Feather name="edit-2" size={16} color="#4B5563" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onDelete} style={{padding: 8, backgroundColor: '#FEE2E2', borderRadius: 8}}>
+              <Feather name="trash-2" size={16} color="#DC2626" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Pressable>
+    </View>
+  );
+};
 
 export default function App() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  
   const [showForm, setShowForm] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  const fabAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(fabAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleShowForm = (value: boolean) => {
     setShowForm(value);
-    if (!value) {
-      setProductToEdit(null);
-    }
+    if (!value) setProductToEdit(null);
   };
 
   const confirmDelete = (product: Product) => {
@@ -71,6 +143,7 @@ export default function App() {
 
   const handleDelete = () => {
     if (productToDelete) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
       setProductToDelete(null);
     }
@@ -83,14 +156,13 @@ export default function App() {
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            p.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter = activeFilter === 'All' ? true : 
-                            activeFilter === 'Disponible' ? p.inStock : 
-                            !p.inStock;
-      return matchesSearch && matchesFilter;
+      const matchesSearch = p.name.toLowerCase().includes(debouncedSearch.toLowerCase());
+      const matchesCategory = activeCategory === 'all' ? true : 
+                              (activeCategory === 'disponible' ? p.inStock : 
+                               (activeCategory === 'agotado' ? !p.inStock : p.categoryId === activeCategory));
+      return matchesSearch && matchesCategory;
     });
-  }, [products, searchQuery, activeFilter]);
+  }, [products, debouncedSearch, activeCategory]);
 
   const stats = useMemo(() => {
     const total = products.length;
@@ -99,128 +171,112 @@ export default function App() {
     return { total, available, outOfStock };
   }, [products]);
 
-  const renderItem = ({ item }: { item: Product }) => (
-    <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
-      <View style={styles.cardLeft}>
-        <View style={styles.thumbnail}>
-          <Text style={styles.thumbnailText}>
-            {item.name.substring(0, 2).toUpperCase()}
-          </Text>
-        </View>
-        <View style={styles.cardContent}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.category}>{item.category}</Text>
-          <Text style={styles.price}>${item.price.toFixed(2)}</Text>
-        </View>
-      </View>
+  return (
+    <View style={styles.mainContainer}>
+      <StatusBar style="dark" />
       
-      <View style={styles.cardRight}>
-        <View style={[styles.badge, item.inStock ? styles.badgeSuccess : styles.badgeDanger]}>
-          <Text style={[styles.badgeText, item.inStock ? styles.badgeTextSuccess : styles.badgeTextDanger]}>
-            {item.inStock ? "Disponible" : "Agotado"}
-          </Text>
-        </View>
-        <View style={styles.cardActions}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => handleEdit(item)}>
-            <Feather name="edit-2" size={18} color="#6B7280" />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, {backgroundColor: '#FEE2E2'}]} onPress={() => confirmDelete(item)}>
-            <Feather name="trash-2" size={18} color="#DC2626" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Pressable>
-  );
-
-  const renderList = () => {
-    return (
       <View style={styles.listContainer}>
-        {/* Header & Search */}
         <View style={styles.header}>
           <Text style={styles.title}>Productos</Text>
-          <Text style={styles.subtitle}>Gestiona tu inventario</Text>
+          <Text style={styles.subtitle}>Gestiona tu inventario con estilo</Text>
           
           <View style={styles.searchContainer}>
             <Feather name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Buscar productos..."
+              placeholder="Buscar por nombre..."
               placeholderTextColor="#9CA3AF"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{top:10, bottom:10, left:10, right:10}}>
                 <Feather name="x-circle" size={18} color="#9CA3AF" />
               </TouchableOpacity>
             )}
           </View>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer} contentContainerStyle={{paddingRight: 20}}>
-            {(['All', 'Disponible', 'Agotado'] as FilterType[]).map((filter) => (
+            <TouchableOpacity style={[styles.filterChip, activeCategory === 'all' && styles.filterChipActive]} onPress={() => setActiveCategory('all')}>
+              <Text style={[styles.filterText, activeCategory === 'all' && styles.filterTextActive]}>Todos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.filterChip, activeCategory === 'disponible' && styles.filterChipActive]} onPress={() => setActiveCategory('disponible')}>
+              <Text style={[styles.filterText, activeCategory === 'disponible' && styles.filterTextActive]}>Disponibles</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.filterChip, activeCategory === 'agotado' && styles.filterChipActive]} onPress={() => setActiveCategory('agotado')}>
+              <Text style={[styles.filterText, activeCategory === 'agotado' && styles.filterTextActive]}>Agotados</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.filterDivider} />
+            
+            {categories.map((cat) => (
               <TouchableOpacity
-                key={filter}
-                style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
-                onPress={() => setActiveFilter(filter)}
+                key={cat.id}
+                style={[styles.filterChip, activeCategory === cat.id && styles.filterChipActive]}
+                onPress={() => setActiveCategory(cat.id)}
               >
-                <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
-                  {filter === 'All' ? 'Todos' : filter}
-                </Text>
+                <View style={[styles.categoryFilterDot, { backgroundColor: cat.color }]} />
+                <Text style={[styles.filterText, activeCategory === cat.id && styles.filterTextActive]}>{cat.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* Stats Summary */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
+             <View style={[styles.statIconWrapper, {backgroundColor: '#F3F4F6'}]}>
+               <Feather name="box" size={16} color="#4B5563" />
+             </View>
             <Text style={styles.statValue}>{stats.total}</Text>
             <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[styles.statValue, {color: '#10B981'}]}>{stats.available}</Text>
+             <View style={[styles.statIconWrapper, {backgroundColor: '#D1FAE5'}]}>
+               <Feather name="check-circle" size={16} color="#059669" />
+             </View>
+            <Text style={[styles.statValue, {color: '#059669'}]}>{stats.available}</Text>
             <Text style={styles.statLabel}>Disponibles</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[styles.statValue, {color: '#EF4444'}]}>{stats.outOfStock}</Text>
+            <View style={[styles.statIconWrapper, {backgroundColor: '#FEE2E2'}]}>
+               <Feather name="alert-circle" size={16} color="#DC2626" />
+             </View>
+            <Text style={[styles.statValue, {color: '#DC2626'}]}>{stats.outOfStock}</Text>
             <Text style={styles.statLabel}>Agotados</Text>
           </View>
         </View>
 
-        {/* Product List */}
         <FlatList
           data={filteredProducts}
           keyExtractor={(item) => item.id}
-          renderItem={renderItem}
+          renderItem={({ item }) => (
+            <SwipeableCard
+              item={item}
+              category={categories.find(c => c.id === item.categoryId) || initialCategories[0]}
+              onEdit={() => handleEdit(item)}
+              onDelete={() => confirmDelete(item)}
+            />
+          )}
           contentContainerStyle={styles.flatListContent}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Feather name="package" size={48} color="#D1D5DB" />
-              <Text style={styles.emptyText}>No se encontraron productos</Text>
+              <View style={styles.emptyIconCircle}>
+                <Feather name="inbox" size={48} color="#D1D5DB" />
+              </View>
+              <Text style={styles.emptyTitle}>Sin resultados</Text>
+              <Text style={styles.emptyText}>No hay productos aquí.</Text>
             </View>
           }
         />
 
-        {/* Floating Action Button */}
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => {
-            setProductToEdit(null);
-            setShowForm(true);
-          }}
-          activeOpacity={0.8}
-        >
-          <Feather name="plus" size={28} color="#FFF" />
-        </TouchableOpacity>
+        <Animated.View style={[styles.fabContainer, { transform: [{ scale: fabAnim }] }]}>
+          <TouchableOpacity style={styles.fab} onPress={() => { setProductToEdit(null); setShowForm(true); }} activeOpacity={0.8}>
+            <Feather name="plus" size={28} color="#FFF" />
+          </TouchableOpacity>
+        </Animated.View>
 
-        {/* Delete Confirmation Modal */}
-        <Modal
-          visible={!!productToDelete}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setProductToDelete(null)}
-        >
+        <Modal visible={!!productToDelete} transparent animationType="fade" onRequestClose={() => setProductToDelete(null)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalIconContainer}>
@@ -228,19 +284,13 @@ export default function App() {
               </View>
               <Text style={styles.modalTitle}>Eliminar Producto</Text>
               <Text style={styles.modalDescription}>
-                ¿Estás seguro que deseas eliminar "{productToDelete?.name}"? Esta acción no se puede deshacer.
+                ¿Eliminar "{productToDelete?.name}"? Esta acción no se puede deshacer.
               </Text>
               <View style={styles.modalActions}>
-                <TouchableOpacity 
-                  style={styles.modalButtonCancel} 
-                  onPress={() => setProductToDelete(null)}
-                >
+                <TouchableOpacity style={styles.modalButtonCancel} onPress={() => setProductToDelete(null)}>
                   <Text style={styles.modalButtonCancelText}>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.modalButtonDelete} 
-                  onPress={handleDelete}
-                >
+                <TouchableOpacity style={styles.modalButtonDelete} onPress={handleDelete}>
                   <Text style={styles.modalButtonDeleteText}>Eliminar</Text>
                 </TouchableOpacity>
               </View>
@@ -248,21 +298,15 @@ export default function App() {
           </View>
         </Modal>
       </View>
-    );
-  };
 
-  return (
-    <View style={styles.mainContainer}>
-      <StatusBar style="dark" />
-      {showForm ? (
-        <AddProductScreen
-          setProducts={setProducts}
-          handleShowForm={handleShowForm}
-          productToEdit={productToEdit}
-        />
-      ) : (
-        renderList()
-      )}
+      <AddProductScreen
+        visible={showForm}
+        onClose={() => handleShowForm(false)}
+        productToEdit={productToEdit}
+        setProducts={setProducts}
+        categories={categories}
+        setCategories={setCategories}
+      />
     </View>
   );
 }
@@ -281,50 +325,54 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '800',
-    color: '#111827',
+    color: '#030712',
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#6B7280',
-    marginBottom: 20,
-    marginTop: 2,
+    marginBottom: 24,
+    marginTop: 4,
+    fontWeight: '500',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 48,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    height: 52,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 8,
     elevation: 2,
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#F3F4F6'
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: '#111827',
+    fontWeight: '500',
     height: '100%',
   },
   filtersContainer: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
     backgroundColor: '#FFFFFF',
     marginRight: 8,
     borderWidth: 1,
@@ -336,32 +384,50 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#4B5563',
   },
   filterTextActive: {
     color: '#FFFFFF',
   },
+  filterDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#D1D5DB',
+    marginHorizontal: 8,
+    alignSelf: 'center',
+  },
+  categoryFilterDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 8,
+    marginBottom: 24,
+    gap: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     alignItems: 'flex-start',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#F3F4F6'
+    borderColor: '#F3F4F6',
+  },
+  statIconWrapper: {
+    padding: 8,
+    borderRadius: 12,
+    marginBottom: 12,
   },
   statValue: {
     fontSize: 24,
@@ -376,27 +442,45 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     paddingHorizontal: 20,
-    paddingBottom: 120, // Enough room for the FAB
+    paddingBottom: 140,
+  },
+  swipeWrap: {
+    marginBottom: 16,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
     borderWidth: 1,
-    borderColor: '#F3F4F6'
+    borderColor: '#F3F4F6',
   },
-  cardPressed: {
-    transform: [{ scale: 0.98 }],
-    backgroundColor: '#F9FAFB',
+  actionRow: {
+    position: 'absolute',
+    right: 0,
+    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 16,
+    width: 140,
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  actionBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardLeft: {
     flexDirection: 'row',
@@ -404,49 +488,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   thumbnail: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   thumbnailText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#6B7280',
+    fontSize: 18,
+    fontWeight: '800',
   },
   cardContent: {
     flex: 1,
   },
   name: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#111827',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  category: {
+  categoryBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  categoryNameText: {
     fontSize: 13,
     color: '#6B7280',
-    marginBottom: 6,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   price: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
-    color: '#111827',
+    color: '#030712',
   },
   cardRight: {
     alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     minHeight: 64,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
   },
   badgeSuccess: {
     backgroundColor: '#D1FAE5',
@@ -456,7 +547,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -466,61 +557,68 @@ const styles = StyleSheet.create({
   badgeTextDanger: {
     color: '#DC2626',
   },
-  cardActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  iconButton: {
-    padding: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
+  fabContainer: {
+    position: 'absolute',
+    bottom: 40,
+    right: 32,
+    shadowColor: '#111827',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 8,
   },
   fab: {
-    position: 'absolute',
-    bottom: 32,
-    right: 32,
     width: 64,
     height: 64,
     borderRadius: 32,
     backgroundColor: '#111827',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
   },
+  emptyIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
   emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#9CA3AF',
+    fontSize: 15,
+    color: '#6B7280',
     fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 32,
     width: '100%',
     maxWidth: 400,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.15,
+    shadowRadius: 30,
+    elevation: 15,
   },
   modalIconContainer: {
     width: 64,
@@ -538,11 +636,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalDescription: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#4B5563',
     textAlign: 'center',
     marginBottom: 32,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   modalActions: {
     flexDirection: 'row',
@@ -558,7 +656,7 @@ const styles = StyleSheet.create({
   },
   modalButtonCancelText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#4B5563',
   },
   modalButtonDelete: {
@@ -570,7 +668,7 @@ const styles = StyleSheet.create({
   },
   modalButtonDeleteText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFFFFF',
   },
 });

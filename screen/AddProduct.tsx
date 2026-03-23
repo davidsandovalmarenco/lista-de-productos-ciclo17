@@ -1,160 +1,467 @@
-import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { Product } from "../App";
+import { useState, useEffect, useRef } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
+import { Feather } from '@expo/vector-icons';
+import { Product, Category } from "../App";
 
 interface AddProductScreenProps {
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
-  handleShowForm: (value: boolean) => void;
+  visible: boolean;
+  onClose: () => void;
   productToEdit?: Product | null;
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  categories: Category[];
+  setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
 }
 
+const COLORS = ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899", "#6B7280"];
+
 export default function AddProductScreen({
-  setProducts,
-  handleShowForm,
+  visible,
+  onClose,
   productToEdit,
+  setProducts,
+  categories,
+  setCategories
 }: AddProductScreenProps) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [inStock, setInStock] = useState(true);
+  
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatColor, setNewCatColor] = useState(COLORS[0]);
+
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (productToEdit) {
-      setName(productToEdit.name);
-      setPrice(productToEdit.price.toString());
+    if (visible) {
+      if (productToEdit) {
+        setName(productToEdit.name);
+        setPrice(productToEdit.price.toString());
+        setCategoryId(productToEdit.categoryId);
+        setInStock(productToEdit.inStock);
+      } else {
+        setName("");
+        setPrice("");
+        setCategoryId(categories[0]?.id || "");
+        setInStock(true);
+      }
+      setIsCreatingCategory(false);
+      
+      Animated.spring(slideAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        bounciness: 4,
+        speed: 12,
+      }).start();
+    } else {
+      slideAnim.setValue(0);
     }
-  }, [productToEdit]);
+  }, [visible, productToEdit, categories]);
+
+  const handleClose = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => onClose());
+  };
 
   const handleSave = () => {
-    if (!name.trim() || !price.trim()) return;
+    if (!name.trim() || !price.trim() || !categoryId) return;
     
     if (productToEdit) {
-      setProducts((prevProducts) =>
-        prevProducts.map((p) =>
-          p.id === productToEdit.id
-            ? { ...p, name, price: parseFloat(price) }
-            : p
-        )
-      );
+      setProducts((prev) => prev.map(p => p.id === productToEdit.id ? { ...p, name, price: parseFloat(price), categoryId, inStock } : p));
     } else {
-      const newProduct: Product = {
+      setProducts(prev => [{
         id: Date.now().toString(),
         name,
         price: parseFloat(price),
-        category: "General",
-        inStock: true,
-      };
-      setProducts((prevProducts) => [...prevProducts, newProduct]);
+        categoryId,
+        inStock
+      }, ...prev]);
     }
-    handleShowForm(false);
+    handleClose();
   };
 
-  const handleCancel = () => {
-    handleShowForm(false);
+  const handleCreateCategory = () => {
+    if (!newCatName.trim()) return;
+    const newCat = { id: `uc_${Date.now()}`, name: newCatName.trim(), color: newCatColor };
+    setCategories(prev => [...prev, newCat]);
+    setCategoryId(newCat.id);
+    setIsCreatingCategory(false);
+    setNewCatName("");
   };
+
+  const handleDeleteCategory = (catId: string) => {
+    setCategories(prev => prev.filter(c => c.id !== catId));
+    if (categoryId === catId) {
+      setCategoryId(categories.find(c => c.id !== catId)?.id || "");
+    }
+  };
+
+  if (!visible) return null;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        {productToEdit ? "Editar Producto" : "Agregar Producto"}
-      </Text>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+        
+        <Animated.View style={[styles.bottomSheet, {
+          transform: [{
+            translateY: slideAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [800, 0]
+            })
+          }]
+        }]}>
+          <View style={styles.dragHandleWrapper}>
+             <View style={styles.dragHandle} />
+          </View>
+          
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{productToEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
+              <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+                <Feather name="x" size={24} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Nombre del Producto</Text>
-        <TextInput
-          placeholder="Ej: Teclado Mecánico"
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholderTextColor="#adb5bd"
-        />
-      </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nombre del producto</Text>
+              <TextInput style={styles.input} placeholder="Ej: Teclado Mecánico" value={name} onChangeText={setName} placeholderTextColor="#9CA3AF" />
+            </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Precio ($)</Text>
-        <TextInput
-          placeholder="Ej: 45.00"
-          style={styles.input}
-          keyboardType="numeric"
-          value={price}
-          onChangeText={setPrice}
-          placeholderTextColor="#adb5bd"
-        />
-      </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Precio ($)</Text>
+              <TextInput style={styles.input} placeholder="0.00" keyboardType="numeric" value={price} onChangeText={setPrice} placeholderTextColor="#9CA3AF" />
+            </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleCancel}>
-          <Text style={styles.buttonText}>Regresar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
-          <Text style={styles.buttonText}>{productToEdit ? "Guardar" : "Agregar"}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Categoría</Text>
+                {!isCreatingCategory && (
+                  <TouchableOpacity onPress={() => setIsCreatingCategory(true)}>
+                    <Text style={styles.linkText}>+ Nueva categoría</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {isCreatingCategory ? (
+                <View style={styles.newCategoryBox}>
+                   <TextInput style={styles.inputSmall} placeholder="Nombre de categoría" value={newCatName} onChangeText={setNewCatName} autoFocus placeholderTextColor="#9CA3AF" />
+                   
+                   <Text style={styles.subtext}>Color de etiqueta</Text>
+                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorScroll} contentContainerStyle={{gap: 12}}>
+                     {COLORS.map(c => (
+                       <TouchableOpacity key={c} onPress={() => setNewCatColor(c)} style={[styles.colorCircle, { backgroundColor: c }, newCatColor === c && styles.colorCircleActive]}>
+                         {newCatColor === c && <Feather name="check" size={16} color="#FFF" />}
+                       </TouchableOpacity>
+                     ))}
+                   </ScrollView>
+                   
+                   <View style={styles.catActionRow}>
+                     <TouchableOpacity onPress={() => setIsCreatingCategory(false)} style={styles.catBtnCancel}>
+                       <Text style={styles.catBtnCancelText}>Cancelar</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity onPress={handleCreateCategory} style={[styles.catBtnSave, !newCatName.trim() && {opacity: 0.5}]} disabled={!newCatName.trim()}>
+                       <Text style={styles.catBtnSaveText}>Crear</Text>
+                     </TouchableOpacity>
+                   </View>
+                </View>
+              ) : (
+                <View style={styles.categoryChips}>
+                  {categories.map((cat) => (
+                    <TouchableOpacity key={cat.id} onPress={() => setCategoryId(cat.id)} style={[styles.chip, categoryId === cat.id && styles.chipActive, { borderColor: categoryId === cat.id ? cat.color : '#E5E7EB' }]}>
+                      {categoryId === cat.id && <View style={[StyleSheet.absoluteFill, {backgroundColor: cat.color, opacity: 0.1, borderRadius: 20}]} />}
+                      <View style={[styles.categoryDot, { backgroundColor: cat.color }]} />
+                      <Text style={[styles.chipText, categoryId === cat.id && {color: cat.color}]}>{cat.name}</Text>
+                      {categoryId === cat.id && (
+                        <TouchableOpacity 
+                          onPress={() => handleDeleteCategory(cat.id)} 
+                          style={{marginLeft: 8, padding: 4, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12}}
+                          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                        >
+                          <Feather name="trash-2" size={14} color="#DC2626" />
+                        </TouchableOpacity>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.statusGroup}>
+              <View style={{flex: 1}}>
+                <Text style={styles.label}>Estado del producto</Text>
+                <Text style={styles.statusSubtext}>¿Está disponible para la venta?</Text>
+              </View>
+              <TouchableOpacity style={[styles.toggleWrap, inStock && styles.toggleWrapActive]} onPress={() => setInStock(!inStock)} activeOpacity={0.8}>
+                 <Animated.View style={[styles.toggleKnob, inStock && styles.toggleKnobActive]} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.footer}>
+              <TouchableOpacity 
+                style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId) && styles.saveActionBtnDisabled]} 
+                onPress={handleSave} 
+                activeOpacity={0.8}
+                disabled={!name.trim() || !price.trim() || !categoryId}
+              >
+                <Text style={styles.saveActionText}>{productToEdit ? "Guardar cambios" : "Crear producto"}</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 24,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  bottomSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    maxHeight: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginVertical: 10,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  dragHandleWrapper: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  dragHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#E5E7EB',
+  },
+  sheetContent: {
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 32,
   },
   title: {
     fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  closeBtn: {
+    padding: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 20,
+  },
+  inputGroup: {
     marginBottom: 24,
-    fontWeight: "bold",
-    color: '#212529',
-    textAlign: 'center',
   },
-  formGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    fontWeight: '600',
-    color: '#495057',
-  },
-  input: {
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: "#ced4da",
-    padding: 14,
-    borderRadius: 8,
-    fontSize: 16,
-    color: '#212529',
-  },
-  buttonContainer: {
+  labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    alignItems: 'flex-end',
+    marginBottom: 10,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 10,
+  },
+  linkText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#3B82F6',
+  },
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  inputSmall: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#111827',
+    fontWeight: '500',
+    marginBottom: 16,
+  },
+  categoryChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  button: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
+  chip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  chipActive: {
+    borderWidth: 1.5,
+  },
+  chipSelectedBg: {},
+  categoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4B5563',
+  },
+  chipTextActive: {
+    fontWeight: '700',
+  },
+  newCategoryBox: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  subtext: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  colorScroll: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  colorCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  colorCircleActive: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 3,
   },
-  cancelButton: {
-    backgroundColor: '#6c757d',
+  catActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
   },
-  saveButton: {
-    backgroundColor: '#0d6efd',
+  catBtnCancel: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  catBtnCancelText: {
+    color: '#6B7280',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  catBtnSave: {
+    backgroundColor: '#111827',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  catBtnSaveText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  statusGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 32,
+  },
+  statusSubtext: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  toggleWrap: {
+    width: 52,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#D1D5DB',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleWrapActive: {
+    backgroundColor: '#10B981',
+  },
+  toggleKnob: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleKnobActive: {
+    transform: [{ translateX: 20 }],
+  },
+  footer: {
+    marginTop: 10,
+  },
+  saveActionBtn: {
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    shadowColor: '#111827',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveActionBtnDisabled: {
+    opacity: 0.5,
+  },
+  saveActionText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
