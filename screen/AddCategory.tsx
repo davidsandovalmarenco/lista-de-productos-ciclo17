@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Alert } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Category } from "../App";
-
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase";
 interface AddCategoryScreenProps {
   visible: boolean;
   onClose: () => void;
@@ -27,54 +28,40 @@ export default function AddCategoryScreen({
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setName("");
       setSelectedColor(COLORS[0]);
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        bounciness: 4,
-        speed: 12,
-      }).start();
-    } else {
-      slideAnim.setValue(0);
+      setIsSubmitting(false);
     }
   }, [visible]);
 
-  const handleClose = () => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => onClose());
-  };
-
-  const handleSave = () => {
-    if (!name.trim()) return;
-    const newCat = { id: `cat_${Date.now()}`, name: name.trim(), color: selectedColor };
-    setCategories(prev => [...prev, newCat]);
-    onCategoryCreated(newCat.id);
-    handleClose();
+  const handleSave = async () => {
+    if (!name.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const docRef = await addDoc(collection(db, "categorias"), {
+        name: name.trim(),
+        color: selectedColor
+      });
+      onCategoryCreated(docRef.id);
+    } catch (e: any) {
+      Alert.alert("Error al guardar", "Revisa tu conexión a Firebase. ERROR: " + e.message);
+      console.error("Error adding category: ", e);
+      setIsSubmitting(false);
+    }
   };
 
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : (Platform.OS === "android" ? "height" : undefined)}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-        <Animated.View style={[styles.bottomSheet, {
-          transform: [{
-            translateY: slideAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [600, 0]
-            })
-          }]
-        }]}>
+        <View style={styles.bottomSheet}>
           <View style={styles.dragHandleWrapper}>
             <View style={styles.dragHandle} />
           </View>
@@ -82,7 +69,7 @@ export default function AddCategoryScreen({
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
             <View style={styles.header}>
               <Text style={styles.title}>Nueva categoría</Text>
-              <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                 <Feather name="x" size={24} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
@@ -124,16 +111,20 @@ export default function AddCategoryScreen({
 
             <View style={styles.footer}>
               <TouchableOpacity
-                style={[styles.saveActionBtn, !name.trim() && styles.saveActionBtnDisabled]}
+                style={[styles.saveActionBtn, (!name.trim() || isSubmitting) && styles.saveActionBtnDisabled]}
                 onPress={handleSave}
                 activeOpacity={0.8}
-                disabled={!name.trim()}
+                disabled={!name.trim() || isSubmitting}
               >
-                <Text style={styles.saveActionText}>Crear categoría</Text>
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveActionText}>Guardar</Text>
+                )}
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </Animated.View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Alert, Animated } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Product, Category } from "../App";
 import AddCategoryScreen from "./AddCategory";
+import { collection, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 interface AddProductScreenProps {
   visible: boolean;
@@ -28,7 +30,7 @@ export default function AddProductScreen({
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -40,50 +42,49 @@ export default function AddProductScreen({
       } else {
         setName("");
         setPrice("");
-        setCategoryId(categories[0]?.id || "");
+        setCategoryId(prev => prev || (categories.length > 0 ? categories[0].id : ""));
         setInStock(true);
       }
-
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        bounciness: 4,
-        speed: 12,
-      }).start();
-    } else {
-      slideAnim.setValue(0);
+      setIsSubmitting(false);
     }
-  }, [visible, productToEdit, categories]);
+  }, [visible, productToEdit]); // Removed 'categories' dependency to prevent text wipe on new category!
 
-  const handleClose = () => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => onClose());
+  const handleSave = async () => {
+    if (!name.trim() || !price.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      if (productToEdit) {
+        await updateDoc(doc(db, "productos", productToEdit.id), {
+          name,
+          price: parseFloat(price) || 0,
+          categoryId: categoryId || "general",
+          inStock
+        });
+      } else {
+        await addDoc(collection(db, "productos"), {
+          name,
+          price: parseFloat(price) || 0,
+          categoryId: categoryId || "general",
+          inStock
+        });
+      }
+      onClose();
+    } catch (e: any) {
+      Alert.alert("Error al guardar", "No se pudo guardar el producto. Revisa tu conexión. ERROR: " + e.message);
+      console.error("Error saving product: ", e);
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSave = () => {
-    if (!name.trim() || !price.trim() || !categoryId) return;
-
-    if (productToEdit) {
-      setProducts((prev) => prev.map(p => p.id === productToEdit.id ? { ...p, name, price: parseFloat(price), categoryId, inStock } : p));
-    } else {
-      setProducts(prev => [{
-        id: Date.now().toString(),
-        name,
-        price: parseFloat(price),
-        categoryId,
-        inStock
-      }, ...prev]);
-    }
-    handleClose();
-  };
-
-  const handleDeleteCategory = (catId: string) => {
-    setCategories(prev => prev.filter(c => c.id !== catId));
-    if (categoryId === catId) {
-      setCategoryId(categories.find(c => c.id !== catId)?.id || "");
+  const handleDeleteCategory = async (catId: string) => {
+    try {
+      await deleteDoc(doc(db, "categorias", catId));
+      if (categoryId === catId) {
+        setCategoryId(categories.find(c => c.id !== catId)?.id || "");
+      }
+    } catch (e) {
+      console.error("Error deleting category: ", e);
     }
   };
 
@@ -91,18 +92,11 @@ export default function AddProductScreen({
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
         <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-          <Animated.View style={[styles.bottomSheet, {
-            transform: [{
-              translateY: slideAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [800, 0]
-              })
-            }]
-          }]}>
+          <View style={styles.bottomSheet}>
             <View style={styles.dragHandleWrapper}>
               <View style={styles.dragHandle} />
             </View>
@@ -110,7 +104,7 @@ export default function AddProductScreen({
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
               <View style={styles.header}>
                 <Text style={styles.title}>{productToEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
-                <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                   <Feather name="x" size={24} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
@@ -171,16 +165,20 @@ export default function AddProductScreen({
 
               <View style={styles.footer}>
                 <TouchableOpacity
-                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId) && styles.saveActionBtnDisabled]}
+                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || isSubmitting) && styles.saveActionBtnDisabled]}
                   onPress={handleSave}
                   activeOpacity={0.8}
-                  disabled={!name.trim() || !price.trim() || !categoryId}
+                  disabled={!name.trim() || !price.trim() || isSubmitting}
                 >
-                  <Text style={styles.saveActionText}>{productToEdit ? "Guardar cambios" : "Crear producto"}</Text>
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.saveActionText}>{productToEdit ? "Guardar cambios" : "Crear producto"}</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </Animated.View>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
 

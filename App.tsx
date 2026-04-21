@@ -16,6 +16,10 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useState, useMemo, useEffect, useRef } from "react";
 import AddProductScreen from "./screen/AddProduct";
+import AddCategoryScreen from "./screen/AddCategory";
+import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { db } from "./firebase";
+import { Alert } from "react-native";
 
 export interface Category {
   id: string;
@@ -109,10 +113,11 @@ const SwipeableCard = ({
 };
 
 export default function App() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const [showForm, setShowForm] = useState(false);
+  const [showMainCategoryModal, setShowMainCategoryModal] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -132,6 +137,43 @@ export default function App() {
     }).start();
   }, []);
 
+  useEffect(() => {
+    const unsubCategories = onSnapshot(
+      collection(db, "categorias"), 
+      (snapshot) => {
+        const cats: Category[] = [];
+        snapshot.forEach(doc => {
+          cats.push({ id: doc.id, ...doc.data() } as Category);
+        });
+        setCategories(cats);
+      },
+      (error) => {
+        console.error("Firebase Categorias Error:", error);
+        Alert.alert("Error de Lectura", "No se pudieron cargar las categorías: " + error.message);
+      }
+    );
+
+    const unsubProducts = onSnapshot(
+      collection(db, "productos"), 
+      (snapshot) => {
+        const prods: Product[] = [];
+        snapshot.forEach(doc => {
+          prods.push({ id: doc.id, ...doc.data() } as Product);
+        });
+        setProducts(prods);
+      },
+      (error) => {
+        console.error("Firebase Productos Error:", error);
+        Alert.alert("Error de Lectura", "No se pudieron cargar los productos: " + error.message);
+      }
+    );
+
+    return () => {
+      unsubCategories();
+      unsubProducts();
+    };
+  }, []);
+
   const handleShowForm = (value: boolean) => {
     setShowForm(value);
     if (!value) setProductToEdit(null);
@@ -141,11 +183,15 @@ export default function App() {
     setProductToDelete(product);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (productToDelete) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
-      setProductToDelete(null);
+      try {
+        await deleteDoc(doc(db, "productos", productToDelete.id));
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setProductToDelete(null);
+      } catch (e) {
+        console.error("Error deleting product: ", e);
+      }
     }
   };
 
@@ -177,8 +223,15 @@ export default function App() {
       
       <View style={styles.listContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Productos</Text>
-          <Text style={styles.subtitle}>Gestiona tu inventario con estilo</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View>
+              <Text style={styles.title}>Productos</Text>
+              <Text style={styles.subtitle}>Gestiona tu inventario con estilo</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowMainCategoryModal(true)} style={styles.headerCategoryBtn}>
+              <Feather name="grid" size={20} color="#111827" />
+            </TouchableOpacity>
+          </View>
           
           <View style={styles.searchContainer}>
             <Feather name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
@@ -307,6 +360,16 @@ export default function App() {
         categories={categories}
         setCategories={setCategories}
       />
+
+      <AddCategoryScreen
+        visible={showMainCategoryModal}
+        onClose={() => setShowMainCategoryModal(false)}
+        categories={categories}
+        setCategories={setCategories}
+        onCategoryCreated={(id) => {
+          setShowMainCategoryModal(false);
+        }}
+      />
     </View>
   );
 }
@@ -336,6 +399,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     marginTop: 4,
     fontWeight: '500',
+  },
+  headerCategoryBtn: {
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   searchContainer: {
     flexDirection: 'row',
