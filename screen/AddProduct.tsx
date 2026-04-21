@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, S
 import { Feather } from '@expo/vector-icons';
 import { Product, Category } from "../App";
 import AddCategoryScreen from "./AddCategory";
+import { collection, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 interface AddProductScreenProps {
   visible: boolean;
@@ -63,27 +65,39 @@ export default function AddProductScreen({
     }).start(() => onClose());
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim() || !price.trim() || !categoryId) return;
 
-    if (productToEdit) {
-      setProducts((prev) => prev.map(p => p.id === productToEdit.id ? { ...p, name, price: parseFloat(price), categoryId, inStock } : p));
-    } else {
-      setProducts(prev => [{
-        id: Date.now().toString(),
-        name,
-        price: parseFloat(price),
-        categoryId,
-        inStock
-      }, ...prev]);
+    try {
+      if (productToEdit) {
+        await updateDoc(doc(db, "productos", productToEdit.id), {
+          name,
+          price: parseFloat(price),
+          categoryId,
+          inStock
+        });
+      } else {
+        await addDoc(collection(db, "productos"), {
+          name,
+          price: parseFloat(price),
+          categoryId,
+          inStock
+        });
+      }
+      handleClose();
+    } catch (e) {
+      console.error("Error saving document: ", e);
     }
-    handleClose();
   };
 
-  const handleDeleteCategory = (catId: string) => {
-    setCategories(prev => prev.filter(c => c.id !== catId));
-    if (categoryId === catId) {
-      setCategoryId(categories.find(c => c.id !== catId)?.id || "");
+  const handleDeleteCategory = async (catId: string) => {
+    try {
+      await deleteDoc(doc(db, "categorias", catId));
+      if (categoryId === catId) {
+        setCategoryId(categories.find(c => c.id !== catId)?.id || "");
+      }
+    } catch (e) {
+      console.error("Error deleting category: ", e);
     }
   };
 

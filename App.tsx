@@ -16,6 +16,8 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useState, useMemo, useEffect, useRef } from "react";
 import AddProductScreen from "./screen/AddProduct";
+import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { db } from "./firebase";
 
 export interface Category {
   id: string;
@@ -109,8 +111,8 @@ const SwipeableCard = ({
 };
 
 export default function App() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const [showForm, setShowForm] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
@@ -132,6 +134,29 @@ export default function App() {
     }).start();
   }, []);
 
+  useEffect(() => {
+    const unsubProducts = onSnapshot(collection(db, "productos"), (querySnapshot) => {
+      const prods: Product[] = [];
+      querySnapshot.forEach((doc) => {
+        prods.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      setProducts(prods);
+    });
+
+    const unsubCategories = onSnapshot(collection(db, "categorias"), (querySnapshot) => {
+      const cats: Category[] = [];
+      querySnapshot.forEach((doc) => {
+        cats.push({ id: doc.id, ...doc.data() } as Category);
+      });
+      setCategories(cats);
+    });
+
+    return () => {
+      unsubProducts();
+      unsubCategories();
+    };
+  }, []);
+
   const handleShowForm = (value: boolean) => {
     setShowForm(value);
     if (!value) setProductToEdit(null);
@@ -141,11 +166,15 @@ export default function App() {
     setProductToDelete(product);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (productToDelete) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
-      setProductToDelete(null);
+      try {
+        await deleteDoc(doc(db, "productos", productToDelete.id));
+        setProductToDelete(null);
+      } catch(e) {
+        console.error("Error borrando producto: ", e);
+      }
     }
   };
 

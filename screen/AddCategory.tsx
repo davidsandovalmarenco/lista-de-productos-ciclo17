@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Category } from "../App";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 interface AddCategoryScreenProps {
   visible: boolean;
@@ -52,12 +54,18 @@ export default function AddCategoryScreen({
     }).start(() => onClose());
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return;
-    const newCat = { id: `cat_${Date.now()}`, name: name.trim(), color: selectedColor };
-    setCategories(prev => [...prev, newCat]);
-    onCategoryCreated(newCat.id);
-    handleClose();
+    try {
+      const docRef = await addDoc(collection(db, "categorias"), {
+        name: name.trim(),
+        color: selectedColor
+      });
+      onCategoryCreated(docRef.id);
+      handleClose();
+    } catch (e) {
+      console.error("Error adding category: ", e);
+    }
   };
 
   if (!visible) return null;
