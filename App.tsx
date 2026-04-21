@@ -47,7 +47,26 @@ export const initialProducts: Product[] = [
   { id: "3", name: "Ergonomic Desk", price: 350.0, categoryId: "c2", inStock: false },
 ];
 
-// Debounce hook
+// ─── Design System ────────────────────────────────────────────────────────────
+const C = {
+  bg: '#F8FAFC',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F1F5F9',
+  textPrimary: '#0F172A',
+  textSecondary: '#64748B',
+  textTertiary: '#94A3B8',
+  border: '#E2E8F0',
+  primary: '#111827',
+  success: '#22C55E',
+  successBg: '#DCFCE7',
+  successText: '#15803D',
+  danger: '#EF4444',
+  dangerBg: '#FEE2E2',
+  dangerText: '#DC2626',
+  overlay: 'rgba(15,23,42,0.55)',
+};
+
+// ─── Debounce hook ─────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -57,94 +76,114 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-const SwipeableCard = ({
-  item,
-  category,
-  onEdit,
-  onDelete
-}: {
-  item: Product;
-  category: Category;
-  onEdit: () => void;
-  onDelete: () => void;
+// ─── StatCard Component ────────────────────────────────────────────────────────
+function StatCard({ icon, value, label, iconColor, accentColor }: {
+  icon: string; value: number; label: string; iconColor: string; accentColor: string;
+}) {
+  return (
+    <View style={[styles.statCard, { borderTopColor: accentColor }]}>
+      <View style={[styles.statIconWrap, { backgroundColor: accentColor + '18' }]}>
+        <Feather name={icon as any} size={18} color={iconColor} />
+      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── ProductCard Component ─────────────────────────────────────────────────────
+const ProductCard = ({ item, category, onEdit, onDelete }: {
+  item: Product; category: Category; onEdit: () => void; onDelete: () => void;
 }) => {
-  const charSum = item.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const charSum = item.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
   const hue = (charSum * 137.5) % 360;
-  const thumbColor = `hsl(${hue}, 70%, 90%)`;
-  const thumbTextColor = `hsl(${hue}, 60%, 40%)`;
+  const thumbBg = `hsl(${hue},65%,92%)`;
+  const thumbText = `hsl(${hue},55%,38%)`;
 
   return (
-    <View style={styles.swipeWrap}>
-      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }]}>
-        <View style={styles.cardLeft}>
-          <View style={[styles.thumbnail, { backgroundColor: thumbColor }]}>
-            <Text style={[styles.thumbnailText, { color: thumbTextColor }]}>
-              {item.name.substring(0, 2).toUpperCase()}
-            </Text>
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.categoryBadgeRow}>
-              <View style={[styles.categoryDot, { backgroundColor: category?.color || '#9CA3AF' }]} />
-              <Text style={styles.categoryNameText}>{category?.name || 'General'}</Text>
-            </View>
-            <Text style={styles.price}>${item.price.toFixed(2)}</Text>
-          </View>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] }]}
+    >
+      {/* Left: avatar + info */}
+      <View style={styles.cardLeft}>
+        <View style={[styles.avatar, { backgroundColor: thumbBg }]}>
+          <Text style={[styles.avatarText, { color: thumbText }]}>
+            {item.name.substring(0, 2).toUpperCase()}
+          </Text>
         </View>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
+          <View style={styles.cardMeta}>
+            <View style={[styles.catDot, { backgroundColor: category?.color || '#94A3B8' }]} />
+            <Text style={styles.cardCategory}>{category?.name || 'General'}</Text>
+          </View>
+          <Text style={styles.cardPrice}>${item.price.toFixed(2)}</Text>
+        </View>
+      </View>
 
-        <View style={styles.cardRight}>
-          <View style={[styles.badge, item.inStock ? styles.badgeSuccess : styles.badgeDanger]}>
-            <Text style={[styles.badgeText, item.inStock ? styles.badgeTextSuccess : styles.badgeTextDanger]}>
-              {item.inStock ? "Disponible" : "Agotado"}
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-            <TouchableOpacity onPress={onEdit} style={{ padding: 8, backgroundColor: '#F2F2F7', borderRadius: 8 }}>
-              <Feather name="edit-2" size={16} color="#000000" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onDelete} style={{ padding: 8, backgroundColor: '#FF3B301A', borderRadius: 8 }}>
-              <Feather name="trash-2" size={16} color="#FF3B30" />
-            </TouchableOpacity>
-          </View>
+      {/* Right: status badge + actions */}
+      <View style={styles.cardRight}>
+        <View style={[styles.statusBadge, item.inStock ? styles.statusAvailable : styles.statusOut]}>
+          <View style={[styles.statusDot, { backgroundColor: item.inStock ? C.success : C.danger }]} />
+          <Text style={[styles.statusText, item.inStock ? styles.statusTextAvailable : styles.statusTextOut]}>
+            {item.inStock ? 'Disponible' : 'Agotado'}
+          </Text>
         </View>
-      </Pressable>
-    </View>
+        <View style={styles.cardActions}>
+          <TouchableOpacity onPress={onEdit} style={styles.actionBtn}>
+            <Feather name="edit-2" size={15} color={C.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDelete} style={[styles.actionBtn, styles.actionBtnDanger]}>
+            <Feather name="trash-2" size={15} color={C.danger} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Pressable>
   );
 };
 
+// ─── EmptyState Component ──────────────────────────────────────────────────────
+function EmptyState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <View style={styles.emptyWrap}>
+      <View style={styles.emptyIconRing}>
+        <View style={styles.emptyIconInner}>
+          <Feather name="package" size={32} color={C.textSecondary} />
+        </View>
+      </View>
+      <Text style={styles.emptyTitle}>Sin productos aún</Text>
+      <Text style={styles.emptyBody}>Agrega tu primer producto{'\n'}y empieza a gestionar tu inventario.</Text>
+      <TouchableOpacity onPress={onAdd} style={styles.emptyBtn} activeOpacity={0.85}>
+        <Feather name="plus" size={16} color={C.surface} style={{ marginRight: 8 }} />
+        <Text style={styles.emptyBtnText}>Agregar producto</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ─── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-
   const [showForm, setShowForm] = useState(false);
   const [showMainCategoryModal, setShowMainCategoryModal] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
-
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-
   const fabAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.spring(fabAnim, {
-      toValue: 1,
-      friction: 5,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(fabAnim, { toValue: 1, friction: 5, tension: 40, useNativeDriver: true }).start();
   }, []);
 
   useEffect(() => {
     const unsubCategories = onSnapshot(
-      collection(db, "categorias"), 
+      collection(db, "categorias"),
       (snapshot) => {
         const cats: Category[] = [];
-        snapshot.forEach(doc => {
-          cats.push({ id: doc.id, ...doc.data() } as Category);
-        });
+        snapshot.forEach(doc => cats.push({ id: doc.id, ...doc.data() } as Category));
         setCategories(cats);
       },
       (error) => {
@@ -152,14 +191,11 @@ export default function App() {
         Alert.alert("Error de Lectura", "No se pudieron cargar las categorías: " + error.message);
       }
     );
-
     const unsubProducts = onSnapshot(
-      collection(db, "productos"), 
+      collection(db, "productos"),
       (snapshot) => {
         const prods: Product[] = [];
-        snapshot.forEach(doc => {
-          prods.push({ id: doc.id, ...doc.data() } as Product);
-        });
+        snapshot.forEach(doc => prods.push({ id: doc.id, ...doc.data() } as Product));
         setProducts(prods);
       },
       (error) => {
@@ -167,11 +203,7 @@ export default function App() {
         Alert.alert("Error de Lectura", "No se pudieron cargar los productos: " + error.message);
       }
     );
-
-    return () => {
-      unsubCategories();
-      unsubProducts();
-    };
+    return () => { unsubCategories(); unsubProducts(); };
   }, []);
 
   const handleShowForm = (value: boolean) => {
@@ -179,9 +211,7 @@ export default function App() {
     if (!value) setProductToEdit(null);
   };
 
-  const confirmDelete = (product: Product) => {
-    setProductToDelete(product);
-  };
+  const confirmDelete = (product: Product) => setProductToDelete(product);
 
   const handleDelete = async () => {
     if (productToDelete) {
@@ -217,142 +247,150 @@ export default function App() {
     return { total, available, outOfStock };
   }, [products]);
 
+  const filterOptions = [
+    { key: 'all', label: 'Todos' },
+    { key: 'disponible', label: 'Disponibles' },
+    { key: 'agotado', label: 'Agotados' },
+  ];
+
   return (
-    <View style={styles.mainContainer}>
+    <View style={styles.root}>
       <StatusBar style="dark" />
 
+      {/* ── Bloque estático (no crece) ── */}
+      <View style={styles.staticBlock}>
 
-      <View style={styles.listContainer}>
+        {/* ── Header ── */}
         <View style={styles.header}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View>
-              <Text style={styles.title}>Productos</Text>
-              <Text style={styles.subtitle}>Gestiona tu inventario con estilo</Text>
-            </View>
-            <TouchableOpacity onPress={() => setShowMainCategoryModal(true)} style={styles.headerCategoryBtn}>
-              <Feather name="grid" size={20} color="#111827" />
-            </TouchableOpacity>
+          <View>
+            <Text style={styles.headerEyebrow}>INVENTARIO</Text>
+            <Text style={styles.headerTitle}>Productos</Text>
           </View>
-
-          <View style={styles.searchContainer}>
-            <Feather name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar por nombre..."
-              placeholderTextColor="#9CA3AF"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Feather name="x-circle" size={18} color="#9CA3AF" />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer} contentContainerStyle={{ paddingRight: 20 }}>
-            <TouchableOpacity style={[styles.filterChip, activeCategory === 'all' && styles.filterChipActive]} onPress={() => setActiveCategory('all')}>
-              <Text style={[styles.filterText, activeCategory === 'all' && styles.filterTextActive]}>Todos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.filterChip, activeCategory === 'disponible' && styles.filterChipActive]} onPress={() => setActiveCategory('disponible')}>
-              <Text style={[styles.filterText, activeCategory === 'disponible' && styles.filterTextActive]}>Disponibles</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.filterChip, activeCategory === 'agotado' && styles.filterChipActive]} onPress={() => setActiveCategory('agotado')}>
-              <Text style={[styles.filterText, activeCategory === 'agotado' && styles.filterTextActive]}>Agotados</Text>
-            </TouchableOpacity>
-
-            <View style={styles.filterDivider} />
-
-            {categories.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.filterChip, activeCategory === cat.id && styles.filterChipActive]}
-                onPress={() => setActiveCategory(cat.id)}
-              >
-                <View style={[styles.categoryFilterDot, { backgroundColor: cat.color }]} />
-                <Text style={[styles.filterText, activeCategory === cat.id && styles.filterTextActive]}>{cat.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <View style={styles.statIconWrapper}>
-              <Feather name="box" size={20} color="#000" />
-            </View>
-            <Text style={styles.statValue}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={styles.statIconWrapper}>
-              <Feather name="check-circle" size={20} color="#34C759" />
-            </View>
-            <Text style={styles.statValue}>{stats.available}</Text>
-            <Text style={styles.statLabel}>Disponibles</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={styles.statIconWrapper}>
-              <Feather name="alert-circle" size={20} color="#FF3B30" />
-            </View>
-            <Text style={styles.statValue}>{stats.outOfStock}</Text>
-            <Text style={styles.statLabel}>Agotados</Text>
-          </View>
-        </View>
-
-        <FlatList
-          data={filteredProducts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <SwipeableCard
-              item={item}
-              category={categories.find(c => c.id === item.categoryId) || initialCategories[0]}
-              onEdit={() => handleEdit(item)}
-              onDelete={() => confirmDelete(item)}
-            />
-          )}
-          contentContainerStyle={styles.flatListContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyIconCircle}>
-                <Feather name="inbox" size={48} color="#4B5563" />
-              </View>
-              <Text style={styles.emptyTitle}>Sin resultados</Text>
-              <Text style={styles.emptyText}>No hay productos aquí.</Text>
-            </View>
-          }
-        />
-
-        <Animated.View style={[styles.fabContainer, { transform: [{ scale: fabAnim }] }]}>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => { setProductToEdit(null); setShowForm(true); }} style={styles.fab}>
-            <Feather name="plus" size={28} color="#FFF" />
+          <TouchableOpacity
+            onPress={() => setShowMainCategoryModal(true)}
+            style={styles.headerAction}
+            activeOpacity={0.7}
+          >
+            <Feather name="grid" size={20} color={C.textPrimary} />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
-        <Modal visible={!!productToDelete} transparent animationType="fade" onRequestClose={() => setProductToDelete(null)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalIconContainer}>
-                <Feather name="alert-triangle" size={28} color="#EF4444" />
-              </View>
-              <Text style={styles.modalTitle}>Eliminar Producto</Text>
-              <Text style={styles.modalDescription}>
-                ¿Eliminar "{productToDelete?.name}"? Esta acción no se puede deshacer.
-              </Text>
-              <View style={styles.modalActions}>
-                <TouchableOpacity style={styles.modalButtonCancel} onPress={() => setProductToDelete(null)}>
-                  <Text style={styles.modalButtonCancelText}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalButtonDelete} onPress={handleDelete}>
-                  <Text style={styles.modalButtonDeleteText}>Eliminar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        {/* ── Search ── */}
+        <View style={styles.searchWrap}>
+          <Feather name="search" size={18} color={C.textTertiary} style={{ marginRight: 10 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar producto..."
+            placeholderTextColor={C.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Feather name="x" size={18} color={C.textTertiary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* ── Filters ── */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.filtersScroll}
+          contentContainerStyle={styles.filtersContent}
+        >
+        {filterOptions.map(opt => (
+          <TouchableOpacity
+            key={opt.key}
+            style={[styles.chip, activeCategory === opt.key && styles.chipActive]}
+            onPress={() => setActiveCategory(opt.key)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.chipText, activeCategory === opt.key && styles.chipTextActive]}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+        {categories.length > 0 && <View style={styles.chipDivider} />}
+
+        {categories.map(cat => (
+          <TouchableOpacity
+            key={cat.id}
+            style={[styles.chip, activeCategory === cat.id && styles.chipActive]}
+            onPress={() => setActiveCategory(cat.id)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.chipDot, { backgroundColor: cat.color }]} />
+            <Text style={[styles.chipText, activeCategory === cat.id && styles.chipTextActive]}>
+              {cat.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+        </ScrollView>
+
+        {/* ── Stats ── */}
+        <View style={styles.statsRow}>
+          <StatCard icon="box" value={stats.total} label="Total" iconColor={C.textPrimary} accentColor={C.primary} />
+          <StatCard icon="check-circle" value={stats.available} label="Disponibles" iconColor={C.success} accentColor={C.success} />
+          <StatCard icon="alert-circle" value={stats.outOfStock} label="Agotados" iconColor={C.danger} accentColor={C.danger} />
+        </View>
+
       </View>
 
+      {/* ── List ── */}
+      <FlatList
+        data={filteredProducts}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <ProductCard
+            item={item}
+            category={categories.find(c => c.id === item.categoryId) || initialCategories[0]}
+            onEdit={() => handleEdit(item)}
+            onDelete={() => confirmDelete(item)}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={<EmptyState onAdd={() => { setProductToEdit(null); setShowForm(true); }} />}
+      />
+
+      {/* ── FAB ── */}
+      <Animated.View style={[styles.fabWrap, { transform: [{ scale: fabAnim }] }]}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => { setProductToEdit(null); setShowForm(true); }}
+          style={styles.fab}
+        >
+          <Feather name="plus" size={22} color="#FFF" />
+          <Text style={styles.fabLabel}>Agregar</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* ── Delete Confirm Modal ── */}
+      <Modal visible={!!productToDelete} transparent animationType="fade" onRequestClose={() => setProductToDelete(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconRing}>
+              <Feather name="trash-2" size={26} color={C.danger} />
+            </View>
+            <Text style={styles.modalTitle}>Eliminar producto</Text>
+            <Text style={styles.modalBody}>
+              {'¿Estás seguro de que deseas eliminar "'}{productToDelete?.name}{'"?\nEsta acción es irreversible.'}
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setProductToDelete(null)} activeOpacity={0.8}>
+                <Text style={styles.modalBtnCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalBtnDelete} onPress={handleDelete} activeOpacity={0.8}>
+                <Text style={styles.modalBtnDeleteText}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Modals ── */}
       <AddProductScreen
         visible={showForm}
         onClose={() => handleShowForm(false)}
@@ -361,390 +399,364 @@ export default function App() {
         categories={categories}
         setCategories={setCategories}
       />
-
       <AddCategoryScreen
         visible={showMainCategoryModal}
         onClose={() => setShowMainCategoryModal(false)}
         categories={categories}
         setCategories={setCategories}
-        onCategoryCreated={(id) => {
-          setShowMainCategoryModal(false);
-        }}
+        onCategoryCreated={() => setShowMainCategoryModal(false)}
       />
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  mainContainer: {
+  root: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: C.bg,
   },
-  listContainer: {
-    flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+
+  // Bloque estático que NO crece — header, search, filtros, stats
+  staticBlock: {
+    flexShrink: 0,
   },
+
+  // Header
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
     paddingHorizontal: 20,
-    marginBottom: 8,
+    paddingTop: Platform.OS === 'ios' ? 62 : 44,
+    paddingBottom: 16,
+    backgroundColor: C.bg,
   },
-  title: {
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.textTertiary,
+    letterSpacing: 1.2,
+    marginBottom: 2,
+  },
+  headerTitle: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#030712',
-    letterSpacing: -0.5,
+    color: C.textPrimary,
+    letterSpacing: -0.6,
   },
-  subtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    marginBottom: 24,
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  headerCategoryBtn: {
-    padding: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+  headerAction: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: C.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: C.border,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  searchContainer: {
+
+  // Search
+  searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: C.surface,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    height: 52,
-    shadowColor: '#000',
+    height: 50,
+    marginHorizontal: 20,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#F3F4F6'
-  },
-  searchIcon: {
-    marginRight: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#111827',
+    fontSize: 15,
+    color: C.textPrimary,
     fontWeight: '500',
     height: '100%',
   },
-  filtersContainer: {
+
+  // Filters
+  filtersScroll: { marginBottom: 14, flexGrow: 0 },
+  filtersContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+    gap: 8,
     flexDirection: 'row',
-    marginBottom: 10,
+    alignItems: 'center',
   },
-  filterChip: {
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    marginRight: 8,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: C.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: C.border,
   },
-  filterChipActive: {
-    backgroundColor: '#111827',
-    borderColor: '#111827',
+  chipActive: {
+    backgroundColor: C.primary,
+    borderColor: C.primary,
   },
-  filterText: {
-    fontSize: 14,
+  chipText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#4B5563',
+    color: C.textSecondary,
   },
-  filterTextActive: {
+  chipTextActive: {
     color: '#FFFFFF',
   },
-  filterDivider: {
+  chipDivider: {
     width: 1,
-    height: 20,
-    backgroundColor: '#D1D5DB',
-    marginHorizontal: 8,
-    alignSelf: 'center',
+    height: 18,
+    backgroundColor: C.border,
+    marginHorizontal: 4,
   },
-  categoryFilterDot: {
-    width: 8,
-    height: 8,
+  chipDot: {
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    marginRight: 8,
+    marginRight: 7,
   },
+
+  // Stats
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
+    gap: 10,
     marginBottom: 24,
-    gap: 12,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
+    backgroundColor: C.surface,
+    borderRadius: 18,
+    padding: 14,
+    borderTopWidth: 3,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: C.border,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  statIconWrapper: {
-    padding: 8,
-    borderRadius: 12,
-    marginBottom: 12,
+  statIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
+    color: C.textPrimary,
+    letterSpacing: -0.5,
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.textTertiary,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
-  flatListContent: {
+
+  // List
+  listContent: {
     paddingHorizontal: 20,
     paddingBottom: 140,
+    gap: 12,
   },
-  swipeWrap: {
-    marginBottom: 16,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
+
+  // Product Card
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: C.surface,
+    borderRadius: 18,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: C.border,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  actionRow: {
-    position: 'absolute',
-    right: 0,
-    height: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 16,
-    width: 140,
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  actionBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  thumbnail: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  thumbnailText: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  cardContent: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  categoryBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  categoryNameText: {
-    fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  price: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#030712',
-  },
-  cardRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-    minHeight: 64,
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 },
+  avatar: {
+    width: 48,
+    height: 48,
     borderRadius: 14,
-  },
-  badgeSuccess: {
-    backgroundColor: '#D1FAE5',
-  },
-  badgeDanger: {
-    backgroundColor: '#FEE2E2',
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  badgeTextSuccess: {
-    color: '#059669',
-  },
-  badgeTextDanger: {
-    color: '#DC2626',
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 40,
-    right: 32,
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 15,
-    elevation: 8,
-  },
-  fab: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#111827',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 14,
   },
-  emptyContainer: {
+  avatarText: { fontSize: 16, fontWeight: '800' },
+  cardInfo: { flex: 1 },
+  cardName: { fontSize: 15, fontWeight: '700', color: C.textPrimary, marginBottom: 3 },
+  cardMeta: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  catDot: { width: 7, height: 7, borderRadius: 4, marginRight: 6 },
+  cardCategory: { fontSize: 12, color: C.textSecondary, fontWeight: '600' },
+  cardPrice: { fontSize: 16, fontWeight: '800', color: C.textPrimary, letterSpacing: -0.3 },
+  cardRight: { alignItems: 'flex-end', gap: 10 },
+  statusBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    gap: 5,
   },
-  emptyIconCircle: {
+  statusAvailable: { backgroundColor: C.successBg },
+  statusOut: { backgroundColor: C.dangerBg },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+  statusTextAvailable: { color: C.successText },
+  statusTextOut: { color: C.dangerText },
+  cardActions: { flexDirection: 'row', gap: 8 },
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: C.surfaceAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  actionBtnDanger: { backgroundColor: C.dangerBg, borderColor: C.dangerBg },
+
+  // Empty State
+  emptyWrap: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
+  emptyIconRing: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: C.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: C.border,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
+  emptyIconInner: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: C.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  emptyText: {
-    fontSize: 15,
-    color: '#6B7280',
-    fontWeight: '500',
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: C.textPrimary, marginBottom: 8, textAlign: 'center' },
+  emptyBody: { fontSize: 14, color: C.textSecondary, textAlign: 'center', lineHeight: 21, marginBottom: 28 },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.primary,
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
+  emptyBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+
+  // FAB
+  fabWrap: {
+    position: 'absolute',
+    bottom: 36,
+    right: 24,
+    shadowColor: C.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  fab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+    gap: 8,
+  },
+  fabLabel: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+
+  // Delete Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: C.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
+  modalCard: {
+    backgroundColor: C.surface,
     borderRadius: 28,
-    padding: 32,
+    padding: 28,
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 380,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.15,
-    shadowRadius: 30,
-    elevation: 15,
+    shadowOpacity: 0.18,
+    shadowRadius: 40,
+    elevation: 20,
   },
-  modalIconContainer: {
+  modalIconRing: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: C.dangerBg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
   },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  modalDescription: {
-    fontSize: 15,
-    color: '#4B5563',
+  modalTitle: { fontSize: 20, fontWeight: '800', color: C.textPrimary, marginBottom: 10, letterSpacing: -0.3 },
+  modalBody: {
+    fontSize: 14,
+    color: C.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
     lineHeight: 22,
+    marginBottom: 28,
   },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 16,
-    width: '100%',
-  },
-  modalButtonCancel: {
+  modalActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  modalBtnCancel: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    borderRadius: 14,
+    backgroundColor: C.surfaceAlt,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  modalBtnCancelText: { fontSize: 15, fontWeight: '700', color: C.textSecondary },
+  modalBtnDelete: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 14,
+    backgroundColor: C.danger,
     alignItems: 'center',
   },
-  modalButtonCancelText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#4B5563',
-  },
-  modalButtonDelete: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: '#DC2626',
-    alignItems: 'center',
-  },
-  modalButtonDeleteText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
+  modalBtnDeleteText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
 });
