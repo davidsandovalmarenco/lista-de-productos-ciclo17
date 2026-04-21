@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, Alert, ActivityIndicator, Animated } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Alert, Animated } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Product, Category } from "../App";
 import AddCategoryScreen from "./AddCategory";
@@ -42,43 +42,37 @@ export default function AddProductScreen({
       } else {
         setName("");
         setPrice("");
-        setCategoryId(categories.length > 0 ? categories[0].id : "");
+        setCategoryId(prev => prev || (categories.length > 0 ? categories[0].id : ""));
         setInStock(true);
       }
       setIsSubmitting(false);
     }
-  }, [visible, productToEdit]);
-
-  useEffect(() => {
-    if (!categoryId && categories.length > 0) {
-      setCategoryId(categories[0].id);
-    }
-  }, [categories, categoryId]);
+  }, [visible, productToEdit]); // Removed 'categories' dependency to prevent text wipe on new category!
 
   const handleSave = async () => {
-    if (!name.trim() || !price.trim() || !categoryId || isSubmitting) return;
+    if (!name.trim() || !price.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       if (productToEdit) {
         await updateDoc(doc(db, "productos", productToEdit.id), {
           name,
-          price: parseFloat(price),
-          categoryId,
+          price: parseFloat(price) || 0,
+          categoryId: categoryId || "general",
           inStock
         });
       } else {
         await addDoc(collection(db, "productos"), {
           name,
-          price: parseFloat(price),
-          categoryId,
+          price: parseFloat(price) || 0,
+          categoryId: categoryId || "general",
           inStock
         });
       }
       onClose();
     } catch (e: any) {
-      Alert.alert("Error", "No se pudo guardar el producto. Revisa tu conexión.");
-      console.error("Error saving document: ", e);
+      Alert.alert("Error al guardar", "No se pudo guardar el producto. Revisa tu conexión. ERROR: " + e.message);
+      console.error("Error saving product: ", e);
       setIsSubmitting(false);
     }
   };
@@ -171,10 +165,10 @@ export default function AddProductScreen({
 
               <View style={styles.footer}>
                 <TouchableOpacity
-                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId || isSubmitting) && styles.saveActionBtnDisabled]}
+                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || isSubmitting) && styles.saveActionBtnDisabled]}
                   onPress={handleSave}
                   activeOpacity={0.8}
-                  disabled={!name.trim() || !price.trim() || !categoryId || isSubmitting}
+                  disabled={!name.trim() || !price.trim() || isSubmitting}
                 >
                   {isSubmitting ? (
                     <ActivityIndicator color="#FFFFFF" />

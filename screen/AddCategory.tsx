@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, ActivityIndicator, Alert } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Category } from "../App";
 import { collection, addDoc } from "firebase/firestore";
@@ -48,13 +48,13 @@ export default function AddCategoryScreen({
         color: selectedColor
       });
       onCategoryCreated(docRef.id);
-      // Removido handleClose para que el framework se encargue del unmount limpio
     } catch (e: any) {
-      Alert.alert("Error al guardar", "Contactando Firebase: " + (e.message || "desconocido"));
+      Alert.alert("Error al guardar", "Revisa tu conexión a Firebase. ERROR: " + e.message);
       console.error("Error adding category: ", e);
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -119,7 +119,7 @@ export default function AddCategoryScreen({
                 {isSubmitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.saveActionText}>Crear categoría</Text>
+                  <Text style={styles.saveActionText}>Guardar</Text>
                 )}
               </TouchableOpacity>
             </View>
