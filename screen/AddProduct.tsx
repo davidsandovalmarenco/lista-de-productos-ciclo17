@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, Alert, ActivityIndicator, Animated } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Product, Category } from "../App";
 import AddCategoryScreen from "./AddCategory";
@@ -30,7 +30,7 @@ export default function AddProductScreen({
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -42,32 +42,23 @@ export default function AddProductScreen({
       } else {
         setName("");
         setPrice("");
-        setCategoryId(categories[0]?.id || "");
+        setCategoryId(categories.length > 0 ? categories[0].id : "");
         setInStock(true);
       }
-
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        bounciness: 4,
-        speed: 12,
-      }).start();
-    } else {
-      slideAnim.setValue(0);
+      setIsSubmitting(false);
     }
-  }, [visible, productToEdit, categories]);
+  }, [visible, productToEdit]);
 
-  const handleClose = () => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => onClose());
-  };
+  useEffect(() => {
+    if (!categoryId && categories.length > 0) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categories, categoryId]);
 
   const handleSave = async () => {
-    if (!name.trim() || !price.trim() || !categoryId) return;
+    if (!name.trim() || !price.trim() || !categoryId || isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       if (productToEdit) {
         await updateDoc(doc(db, "productos", productToEdit.id), {
@@ -84,9 +75,11 @@ export default function AddProductScreen({
           inStock
         });
       }
-      handleClose();
-    } catch (e) {
+      onClose();
+    } catch (e: any) {
+      Alert.alert("Error", "No se pudo guardar el producto. Revisa tu conexión.");
       console.error("Error saving document: ", e);
+      setIsSubmitting(false);
     }
   };
 
@@ -105,18 +98,11 @@ export default function AddProductScreen({
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
         <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+          <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-          <Animated.View style={[styles.bottomSheet, {
-            transform: [{
-              translateY: slideAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [800, 0]
-              })
-            }]
-          }]}>
+          <View style={styles.bottomSheet}>
             <View style={styles.dragHandleWrapper}>
               <View style={styles.dragHandle} />
             </View>
@@ -124,7 +110,7 @@ export default function AddProductScreen({
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
               <View style={styles.header}>
                 <Text style={styles.title}>{productToEdit ? "Editar Producto" : "Nuevo Producto"}</Text>
-                <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                   <Feather name="x" size={24} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
@@ -185,16 +171,20 @@ export default function AddProductScreen({
 
               <View style={styles.footer}>
                 <TouchableOpacity
-                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId) && styles.saveActionBtnDisabled]}
+                  style={[styles.saveActionBtn, (!name.trim() || !price.trim() || !categoryId || isSubmitting) && styles.saveActionBtnDisabled]}
                   onPress={handleSave}
                   activeOpacity={0.8}
-                  disabled={!name.trim() || !price.trim() || !categoryId}
+                  disabled={!name.trim() || !price.trim() || !categoryId || isSubmitting}
                 >
-                  <Text style={styles.saveActionText}>{productToEdit ? "Guardar cambios" : "Crear producto"}</Text>
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.saveActionText}>{productToEdit ? "Guardar cambios" : "Crear producto"}</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </Animated.View>
+          </View>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -213,175 +203,33 @@ export default function AddProductScreen({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  bottomSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  dragHandleWrapper: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  dragHandle: {
-    width: 48,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#E5E7EB',
-  },
-  sheetContent: {
-    paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  closeBtn: {
-    padding: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 10,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#374151',
-    marginBottom: 10,
-  },
-  linkText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#3B82F6',
-  },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  categoryChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  chipActive: {
-    borderWidth: 1.5,
-  },
-  categoryDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
-  chipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  statusGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 32,
-  },
-  statusSubtext: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  toggleWrap: {
-    width: 52,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#D1D5DB',
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
-  toggleWrapActive: {
-    backgroundColor: '#10B981',
-  },
-  toggleKnob: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  toggleKnobActive: {
-    transform: [{ translateX: 20 }],
-  },
-  footer: {
-    marginTop: 10,
-  },
-  saveActionBtn: {
-    backgroundColor: '#111827',
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveActionBtnDisabled: {
-    opacity: 0.5,
-  },
-  saveActionText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
+  bottomSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, maxHeight: '90%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 20 },
+  dragHandleWrapper: { alignItems: 'center', paddingVertical: 12 },
+  dragHandle: { width: 48, height: 5, borderRadius: 3, backgroundColor: '#E5E5EA' },
+  sheetContent: { paddingHorizontal: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+  title: { fontSize: 24, fontWeight: '700', color: '#000000' },
+  closeBtn: { padding: 8, backgroundColor: '#F2F2F7', borderRadius: 20 },
+  inputGroup: { marginBottom: 24 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 },
+  label: { fontSize: 16, fontWeight: '600', color: '#000000', marginBottom: 10 },
+  linkText: { fontSize: 14, fontWeight: '600', color: '#007AFF' },
+  input: { backgroundColor: '#F2F2F7', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, color: '#000000', fontWeight: '500' },
+  categoryChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F2F2F7' },
+  chipActive: { backgroundColor: '#000000' },
+  categoryDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+  chipText: { fontSize: 14, fontWeight: '600', color: '#000000' },
+  statusGroup: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F2F2F7', padding: 16, borderRadius: 20, marginBottom: 32 },
+  statusSubtext: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
+  toggleWrap: { width: 52, height: 32, borderRadius: 16, backgroundColor: '#E5E5EA', justifyContent: 'center', paddingHorizontal: 2 },
+  toggleWrapActive: { backgroundColor: '#34C759' },
+  toggleKnob: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  toggleKnobActive: { transform: [{ translateX: 20 }] },
+  footer: { marginTop: 10 },
+  saveActionBtn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', backgroundColor: '#000000' },
+  saveActionBtnDisabled: { opacity: 0.3 },
+  saveActionText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
 });

@@ -73,7 +73,7 @@ const SwipeableCard = ({
 
   return (
     <View style={styles.swipeWrap}>
-      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}>
+      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }]}>
         <View style={styles.cardLeft}>
           <View style={[styles.thumbnail, { backgroundColor: thumbColor }]}>
             <Text style={[styles.thumbnailText, { color: thumbTextColor }]}>
@@ -97,11 +97,11 @@ const SwipeableCard = ({
             </Text>
           </View>
           <View style={{flexDirection: 'row', gap: 10, marginTop: 12}}>
-            <TouchableOpacity onPress={onEdit} style={{padding: 8, backgroundColor: '#F3F4F6', borderRadius: 8}}>
-              <Feather name="edit-2" size={16} color="#4B5563" />
+            <TouchableOpacity onPress={onEdit} style={{padding: 8, backgroundColor: '#F2F2F7', borderRadius: 8}}>
+              <Feather name="edit-2" size={16} color="#000000" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={onDelete} style={{padding: 8, backgroundColor: '#FEE2E2', borderRadius: 8}}>
-              <Feather name="trash-2" size={16} color="#DC2626" />
+            <TouchableOpacity onPress={onDelete} style={{padding: 8, backgroundColor: '#FF3B301A', borderRadius: 8}}>
+              <Feather name="trash-2" size={16} color="#FF3B30" />
             </TouchableOpacity>
           </View>
         </View>
@@ -204,6 +204,7 @@ export default function App() {
     <View style={styles.mainContainer}>
       <StatusBar style="dark" />
       
+      
       <View style={styles.listContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Productos</Text>
@@ -253,24 +254,24 @@ export default function App() {
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-             <View style={[styles.statIconWrapper, {backgroundColor: '#F3F4F6'}]}>
-               <Feather name="box" size={16} color="#4B5563" />
+             <View style={styles.statIconWrapper}>
+               <Feather name="box" size={20} color="#000" />
              </View>
             <Text style={styles.statValue}>{stats.total}</Text>
             <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statCard}>
-             <View style={[styles.statIconWrapper, {backgroundColor: '#D1FAE5'}]}>
-               <Feather name="check-circle" size={16} color="#059669" />
+             <View style={styles.statIconWrapper}>
+               <Feather name="check-circle" size={20} color="#34C759" />
              </View>
-            <Text style={[styles.statValue, {color: '#059669'}]}>{stats.available}</Text>
+            <Text style={styles.statValue}>{stats.available}</Text>
             <Text style={styles.statLabel}>Disponibles</Text>
           </View>
           <View style={styles.statCard}>
-            <View style={[styles.statIconWrapper, {backgroundColor: '#FEE2E2'}]}>
-               <Feather name="alert-circle" size={16} color="#DC2626" />
+            <View style={styles.statIconWrapper}>
+               <Feather name="alert-circle" size={20} color="#FF3B30" />
              </View>
-            <Text style={[styles.statValue, {color: '#DC2626'}]}>{stats.outOfStock}</Text>
+            <Text style={styles.statValue}>{stats.outOfStock}</Text>
             <Text style={styles.statLabel}>Agotados</Text>
           </View>
         </View>
@@ -291,7 +292,7 @@ export default function App() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconCircle}>
-                <Feather name="inbox" size={48} color="#D1D5DB" />
+                <Feather name="inbox" size={48} color="#4B5563" />
               </View>
               <Text style={styles.emptyTitle}>Sin resultados</Text>
               <Text style={styles.emptyText}>No hay productos aquí.</Text>
@@ -300,7 +301,7 @@ export default function App() {
         />
 
         <Animated.View style={[styles.fabContainer, { transform: [{ scale: fabAnim }] }]}>
-          <TouchableOpacity style={styles.fab} onPress={() => { setProductToEdit(null); setShowForm(true); }} activeOpacity={0.8}>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => { setProductToEdit(null); setShowForm(true); }} style={styles.fab}>
             <Feather name="plus" size={28} color="#FFF" />
           </TouchableOpacity>
         </Animated.View>
@@ -341,363 +342,59 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  listContainer: {
-    flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-  },
-  header: {
-    paddingHorizontal: 20,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#030712',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#6B7280',
-    marginBottom: 24,
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    height: 52,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#F3F4F6'
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#111827',
-    fontWeight: '500',
-    height: '100%',
-  },
-  filtersContainer: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: '#FFFFFF',
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  filterChipActive: {
-    backgroundColor: '#111827',
-    borderColor: '#111827',
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-  },
-  filterDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: '#D1D5DB',
-    marginHorizontal: 8,
-    alignSelf: 'center',
-  },
-  categoryFilterDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 24,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  statIconWrapper: {
-    padding: 8,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  flatListContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 140,
-  },
-  swipeWrap: {
-    marginBottom: 16,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  actionRow: {
-    position: 'absolute',
-    right: 0,
-    height: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 16,
-    width: 140,
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  actionBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  thumbnail: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  thumbnailText: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  cardContent: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  categoryBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  categoryNameText: {
-    fontSize: 13,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  price: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#030712',
-  },
-  cardRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-    minHeight: 64,
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  badgeSuccess: {
-    backgroundColor: '#D1FAE5',
-  },
-  badgeDanger: {
-    backgroundColor: '#FEE2E2',
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  badgeTextSuccess: {
-    color: '#059669',
-  },
-  badgeTextDanger: {
-    color: '#DC2626',
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 40,
-    right: 32,
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 15,
-    elevation: 8,
-  },
-  fab: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#111827',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyIconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    padding: 32,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.15,
-    shadowRadius: 30,
-    elevation: 15,
-  },
-  modalIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FEE2E2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  modalDescription: {
-    fontSize: 15,
-    color: '#4B5563',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 22,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 16,
-    width: '100%',
-  },
-  modalButtonCancel: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-  },
-  modalButtonCancelText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#4B5563',
-  },
-  modalButtonDelete: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: '#DC2626',
-    alignItems: 'center',
-  },
-  modalButtonDeleteText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
+  mainContainer: { flex: 1, backgroundColor: '#FFFFFF' },
+  listContainer: { flex: 1, paddingTop: Platform.OS === 'ios' ? 60 : 40 },
+  header: { paddingHorizontal: 20, marginBottom: 8 },
+  title: { fontSize: 34, fontWeight: '700', color: '#000000', letterSpacing: -0.8 },
+  subtitle: { fontSize: 16, color: '#8E8E93', marginBottom: 24, marginTop: 4, fontWeight: '500' },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F2F7', borderRadius: 12, paddingHorizontal: 16, height: 48, marginBottom: 20 },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16, color: '#000000', fontWeight: '500', height: '100%' },
+  filtersContainer: { flexDirection: 'row', marginBottom: 10 },
+  filterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 24, backgroundColor: '#F2F2F7', marginRight: 8 },
+  filterChipActive: { backgroundColor: '#000000' },
+  filterText: { fontSize: 14, fontWeight: '600', color: '#8E8E93' },
+  filterTextActive: { color: '#FFFFFF' },
+  filterDivider: { width: 1, height: 20, backgroundColor: '#E5E5EA', marginHorizontal: 8, alignSelf: 'center' },
+  categoryFilterDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 20, gap: 12 },
+  statCard: { flex: 1, borderRadius: 16, padding: 16, alignItems: 'flex-start', backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2, borderWidth: 1, borderColor: '#F2F2F7' },
+  statIconWrapper: { marginBottom: 12 },
+  statValue: { fontSize: 24, fontWeight: '700', color: '#000000', marginBottom: 4 },
+  statLabel: { fontSize: 13, color: '#8E8E93', fontWeight: '500' },
+  flatListContent: { paddingHorizontal: 20, paddingBottom: 140 },
+  swipeWrap: { marginBottom: 12, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#F2F2F7' },
+  cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  thumbnail: { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  thumbnailText: { fontSize: 18, fontWeight: '700' },
+  cardContent: { flex: 1 },
+  name: { fontSize: 16, fontWeight: '600', color: '#000000', marginBottom: 4 },
+  categoryBadgeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  categoryDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  categoryNameText: { fontSize: 13, color: '#8E8E93', fontWeight: '500' },
+  price: { fontSize: 16, fontWeight: '700', color: '#000000' },
+  cardRight: { alignItems: 'flex-end', justifyContent: 'flex-start', minHeight: 64 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  badgeSuccess: { backgroundColor: '#34C7591A' },
+  badgeDanger: { backgroundColor: '#FF3B301A' },
+  badgeText: { fontSize: 12, fontWeight: '600' },
+  badgeTextSuccess: { color: '#34C759' },
+  badgeTextDanger: { color: '#FF3B30' },
+  fabContainer: { position: 'absolute', bottom: 40, right: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 5 },
+  fab: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+  emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F2F2F7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#000000', marginBottom: 8 },
+  emptyText: { fontSize: 15, color: '#8E8E93', fontWeight: '500' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 15 },
+  modalIconContainer: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FF3B301A', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#000000', marginBottom: 8 },
+  modalDescription: { fontSize: 15, color: '#8E8E93', textAlign: 'center', marginBottom: 24, lineHeight: 22 },
+  modalActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  modalButtonCancel: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#F2F2F7', alignItems: 'center' },
+  modalButtonCancelText: { fontSize: 16, fontWeight: '600', color: '#000000' },
+  modalButtonDelete: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#FF3B30', alignItems: 'center' },
+  modalButtonDeleteText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
 });

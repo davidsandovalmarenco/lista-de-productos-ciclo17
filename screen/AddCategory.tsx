@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Animated, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, ScrollView, Platform, KeyboardAvoidingView, Alert, ActivityIndicator } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import { Category } from "../App";
 import { collection, addDoc } from "firebase/firestore";
@@ -29,60 +29,39 @@ export default function AddCategoryScreen({
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setName("");
       setSelectedColor(COLORS[0]);
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        bounciness: 4,
-        speed: 12,
-      }).start();
-    } else {
-      slideAnim.setValue(0);
+      setIsSubmitting(false);
     }
   }, [visible]);
 
-  const handleClose = () => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => onClose());
-  };
-
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const docRef = await addDoc(collection(db, "categorias"), {
         name: name.trim(),
         color: selectedColor
       });
       onCategoryCreated(docRef.id);
-      handleClose();
-    } catch (e) {
+      // Removido handleClose para que el framework se encargue del unmount limpio
+    } catch (e: any) {
+      Alert.alert("Error al guardar", "Contactando Firebase: " + (e.message || "desconocido"));
       console.error("Error adding category: ", e);
+      setIsSubmitting(false);
     }
   };
 
-  if (!visible) return null;
-
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : (Platform.OS === "android" ? "height" : undefined)}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-        <Animated.View style={[styles.bottomSheet, {
-          transform: [{
-            translateY: slideAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [600, 0]
-            })
-          }]
-        }]}>
+        <View style={styles.bottomSheet}>
           <View style={styles.dragHandleWrapper}>
             <View style={styles.dragHandle} />
           </View>
@@ -90,7 +69,7 @@ export default function AddCategoryScreen({
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
             <View style={styles.header}>
               <Text style={styles.title}>Nueva categoría</Text>
-              <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                 <Feather name="x" size={24} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
@@ -132,166 +111,48 @@ export default function AddCategoryScreen({
 
             <View style={styles.footer}>
               <TouchableOpacity
-                style={[styles.saveActionBtn, !name.trim() && styles.saveActionBtnDisabled]}
+                style={[styles.saveActionBtn, (!name.trim() || isSubmitting) && styles.saveActionBtnDisabled]}
                 onPress={handleSave}
                 activeOpacity={0.8}
-                disabled={!name.trim()}
+                disabled={!name.trim() || isSubmitting}
               >
-                <Text style={styles.saveActionText}>Crear categoría</Text>
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.saveActionText}>Crear categoría</Text>
+                )}
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </Animated.View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  bottomSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  dragHandleWrapper: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  dragHandle: {
-    width: 48,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#E5E7EB',
-  },
-  sheetContent: {
-    paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  closeBtn: {
-    padding: 8,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
-  },
-  previewContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  previewLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  previewBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  categoryDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
-  previewText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#374151',
-    marginBottom: 10,
-  },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  colorCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorCircleActive: {
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  footer: {
-    marginTop: 10,
-  },
-  saveActionBtn: {
-    backgroundColor: '#111827',
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveActionBtnDisabled: {
-    opacity: 0.5,
-  },
-  saveActionText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
+  bottomSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 20 },
+  dragHandleWrapper: { alignItems: 'center', paddingVertical: 12 },
+  dragHandle: { width: 48, height: 5, borderRadius: 3, backgroundColor: '#E5E5EA' },
+  sheetContent: { paddingHorizontal: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  title: { fontSize: 22, fontWeight: '700', color: '#000000' },
+  closeBtn: { padding: 8, backgroundColor: '#F2F2F7', borderRadius: 20 },
+  previewContainer: { alignItems: 'center', paddingVertical: 24, backgroundColor: '#F2F2F7', borderRadius: 20, marginBottom: 24 },
+  previewLabel: { fontSize: 13, fontWeight: '600', color: '#8E8E93', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  previewBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 1 },
+  categoryDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+  previewText: { fontSize: 15, fontWeight: '600' },
+  inputGroup: { marginBottom: 24 },
+  label: { fontSize: 16, fontWeight: '600', color: '#000000', marginBottom: 10 },
+  input: { backgroundColor: '#F2F2F7', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, color: '#000000', fontWeight: '500' },
+  colorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  colorCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  colorCircleActive: { borderWidth: 3, borderColor: '#000000' },
+  footer: { marginTop: 10 },
+  saveActionBtn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', backgroundColor: '#000000' },
+  saveActionBtnDisabled: { opacity: 0.3 },
+  saveActionText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
 });
